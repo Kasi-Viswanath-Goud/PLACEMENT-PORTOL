@@ -1,0 +1,35 @@
+<svg width="200" height="200" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="grad" x1="0" y1="0" x2="200" y2="200" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#6366F1"/>
+      <stop offset="1" stop-color="#06B6D4"/>
+    </linearGradient>
+    <filter id="shadow" x="40" y="40" width="120" height="120" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="4" stdDeviation="4" flood-color="#000000" flood-opacity="0.15"/>
+    </filter>
+  </defs>
+  
+  <!-- Transparent background container -->
+  <rect width="200" height="200" fill="transparent"/>
+  
+  <!-- Gradient App Icon Base -->
+  <rect x="10" y="10" width="180" height="180" rx="45" fill="url(#grad)"/>
+  
+  <!-- Letter E built with dynamic rounded shapes -->
+  <g filter="url(#shadow)">
+    <!-- Top Bar -->
+    <rect x="60" y="65" width="80" height="18" rx="9" fill="white"/>
+    
+    <!-- Middle Bar (shorter) -->
+    <rect x="60" y="95" width="55" height="18" rx="9" fill="white"/>
+    
+    <!-- Bottom Bar -->
+    <rect x="60" y="125" width="80" height="18" rx="9" fill="white"/>
+    
+    <!-- Vertical Bar -->
+    <rect x="60" y="65" width="18" height="78" rx="9" fill="white"/>
+
+    <!-- Upward arrow element indicating growth/elevation -->
+    <path d="M125 100 L145 80 L145 105 Z" fill="white" />
+  </g>
+</svg>
