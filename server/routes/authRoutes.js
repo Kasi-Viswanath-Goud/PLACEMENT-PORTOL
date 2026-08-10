@@ -111,12 +111,12 @@ router.post('/login', async (req, res) => {
         const hp = await bcrypt.hash('password123', 10);
         const demos = {
           'student@campus.edu': {
-            _id: 'mock_student_1', name: 'Alex Johnson', email: 'student@campus.edu', password: hp, role: 'student',
+            _id: 'mock_student_1', name: 'Chintu', email: 'student@campus.edu', password: hp, role: 'student',
             cgpa: 8.5, branch: 'Computer Science', passingYear: 2026, phone: '+91 9876543210',
             college: 'IIT Delhi', university: 'IIT Delhi', degree: 'B.Tech',
             headline: 'Full-Stack Developer | Open Source Enthusiast',
             summary: 'Passionate Computer Science student with expertise in web development, machine learning, and cloud computing.',
-            skills: ['React', 'Node.js', 'Python', 'TypeScript', 'MongoDB', 'AWS'],
+            skills: ['HTML', 'CSS', 'JavaScript', 'React', 'Git', 'Node.js'],
             programmingLanguages: ['JavaScript', 'Python', 'C++', 'Java'],
             projects: [
               { title: 'E-Commerce Platform', description: 'Full-stack marketplace with payment integration', techStack: ['React', 'Node.js', 'MongoDB'], liveUrl: '', githubUrl: 'https://github.com/alex/ecommerce' },
@@ -134,7 +134,7 @@ router.post('/login', async (req, res) => {
             achievements: [
               { title: 'Google Code Jam Finalist', description: 'Top 500 globally', date: '2025' }
             ],
-            resumeUrl: '', resumeOriginalName: '', resumeScore: 78,
+            resumeUrl: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf', resumeOriginalName: 'Chintu_Resume.pdf', resumeScore: 78,
             github: 'https://github.com/alexjohnson', linkedin: 'https://linkedin.com/in/alexjohnson',
             portfolio: '', personalWebsite: '', twitter: '',
             profilePicture: '', profileViews: 42,

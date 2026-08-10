@@ -17,11 +17,11 @@ async function processImage(inputPath, outputPath) {
       // Calculate distance from white (255, 255, 255)
       const dist = Math.sqrt(Math.pow(255 - r, 2) + Math.pow(255 - g, 2) + Math.pow(255 - b, 2));
       
-      if (dist < 50) {
+      if (dist < 40) {
         this.bitmap.data[idx + 3] = 0; // Fully transparent
-      } else if (dist < 150) {
+      } else if (dist < 90) {
         // Semi-transparent for smooth edges
-        this.bitmap.data[idx + 3] = Math.floor(((dist - 50) / 100) * 255);
+        this.bitmap.data[idx + 3] = Math.floor(((dist - 40) / 50) * 255);
       }
       
       // Ensure the red part is fully opaque

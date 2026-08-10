@@ -19,7 +19,6 @@ router.get('/', authenticate, async (req, res) => {
         // Seed demo notifications
         const demos = [
           { _id: 'notif_1', userId: req.user.id, type: 'job_posted', title: 'New Job Opening', message: 'Google has posted a new Software Engineer position', link: '/jobs', isRead: false, createdAt: new Date(Date.now() - 3600000) },
-          { _id: 'notif_2', userId: req.user.id, type: 'system', title: 'Welcome to PlaceHub!', message: 'Complete your profile to start applying for jobs', link: '/profile', isRead: false, createdAt: new Date(Date.now() - 86400000) },
           { _id: 'notif_3', userId: req.user.id, type: 'profile_view', title: 'Profile Viewed', message: 'A recruiter from Microsoft viewed your profile', link: '/profile', isRead: true, createdAt: new Date(Date.now() - 172800000) }
         ];
         mockNotifications.push(...demos);

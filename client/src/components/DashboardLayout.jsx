@@ -1,10 +1,10 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, NavLink, useLocation, useNavigate, Outlet } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { 
   LayoutGrid, Search, User, FileText, Award, MessageSquare, 
-  Bell, Plus, Users, LogOut, Sun, Moon, Settings, Compass, ChevronRight, Clock
+  Bell, Plus, Users, LogOut, Sun, Moon, Settings, Compass, ChevronRight, Clock, X
 } from 'lucide-react';
 
 export default function DashboardLayout() {
@@ -12,6 +12,41 @@ export default function DashboardLayout() {
   const { theme, toggleTheme } = useTheme();
   const location = useLocation();
   const navigate = useNavigate();
+
+  const [hasNewAlert, setHasNewAlert] = useState(false);
+  const [showDropdown, setShowDropdown] = useState(false);
+  const [latestJob, setLatestJob] = useState(null);
+
+  useEffect(() => {
+    if (user?.role === 'student') {
+      const fetchLatestJob = async () => {
+        try {
+          const res = await fetch('/api/jobs');
+          if (res.ok) {
+            const data = await res.json();
+            if (data && data.length > 0) {
+              setLatestJob(data[0]);
+              // Show notification if not seen this session
+              if (!sessionStorage.getItem('hasSeenJobPopup')) {
+                setTimeout(() => {
+                  setHasNewAlert(true);
+                  setTimeout(() => setShowDropdown(true), 1200); // unfold card after bell shakes
+                }, 2000);
+              }
+            }
+          }
+        } catch (err) {
+          console.error(err);
+        }
+      };
+      fetchLatestJob();
+    }
+  }, [user]);
+
+  const handleDismissPopup = () => {
+    setShowDropdown(false);
+    sessionStorage.setItem('hasSeenJobPopup', 'true');
+  };
 
   const getBreadcrumbs = () => {
     const path = location.pathname;
@@ -268,33 +303,112 @@ export default function DashboardLayout() {
           {/* User Tools Right */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
             
-            {/* Notification trigger */}
-            <Link 
-              to="/notifications" 
-              style={{ 
-                background: 'var(--bg-primary)',
-                border: '1px solid var(--border-color)',
-                padding: '0.45rem', 
-                borderRadius: '50%',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                position: 'relative',
-                color: 'var(--text-primary)'
-              }}
-              title="Notifications"
-            >
-              <Bell size={16} />
-              <span style={{ 
-                position: 'absolute', 
-                top: '-2px', 
-                right: '-2px', 
-                width: '8px', 
-                height: '8px', 
-                background: 'var(--danger)', 
-                borderRadius: '50%' 
-              }} />
-            </Link>
+            {/* Notification trigger with animation */}
+            <div style={{ position: 'relative' }}>
+              <div 
+                onClick={() => {
+                  setShowDropdown(!showDropdown);
+                  if (hasNewAlert) setHasNewAlert(false);
+                }}
+                className={hasNewAlert ? 'animate-bell' : ''}
+                style={{ 
+                  background: 'var(--bg-primary)',
+                  border: '1px solid var(--border-color)',
+                  padding: '0.45rem', 
+                  borderRadius: '50%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  position: 'relative',
+                  color: 'var(--text-primary)',
+                  cursor: 'pointer'
+                }}
+                title="Notifications"
+              >
+                <Bell size={16} />
+                {(hasNewAlert || showDropdown) && (
+                  <span style={{ 
+                    position: 'absolute', 
+                    top: '-2px', 
+                    right: '-2px', 
+                    width: '8px', 
+                    height: '8px', 
+                    background: 'var(--danger)', 
+                    borderRadius: '50%' 
+                  }} />
+                )}
+              </div>
+
+              {/* Unfolding Notification Card */}
+              {showDropdown && latestJob && (
+                <div 
+                  className="animate-unfold"
+                  style={{
+                    position: 'absolute',
+                    top: 'calc(100% + 16px)',
+                    right: '-10px',
+                    width: '320px',
+                    background: 'var(--bg-secondary)',
+                    border: '1px solid var(--border-color)',
+                    borderRadius: 'var(--radius-lg, 16px)',
+                    padding: '1.25rem',
+                    boxShadow: '0 15px 40px rgba(0,0,0,0.2)',
+                    zIndex: 50,
+                  }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.25rem' }}>
+                    <h4 style={{ margin: 0, fontWeight: '700', fontSize: '1rem', color: 'var(--text-primary)' }}>
+                      New job posted
+                    </h4>
+                    <button 
+                      onClick={handleDismissPopup}
+                      style={{ 
+                        background: 'none', 
+                        border: 'none', 
+                        color: 'var(--text-muted)', 
+                        cursor: 'pointer',
+                        padding: '0',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                      }}
+                    >
+                      <X size={16} />
+                    </button>
+                  </div>
+                  <p style={{ margin: '0 0 1rem 0', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
+                    {latestJob.companyName} — {latestJob.title}.
+                  </p>
+                  <div style={{ display: 'flex', gap: '0.5rem' }}>
+                    <span style={{ 
+                      background: 'rgba(16, 185, 129, 0.1)', 
+                      color: '#10B981', 
+                      padding: '0.2rem 0.6rem', 
+                      borderRadius: '12px', 
+                      fontSize: '0.8rem', 
+                      fontWeight: '500' 
+                    }}>
+                      {latestJob.packageCTC} LPA
+                    </span>
+                    <span style={{ 
+                      background: 'rgba(59, 130, 246, 0.1)', 
+                      color: '#3B82F6', 
+                      padding: '0.2rem 0.6rem', 
+                      borderRadius: '12px', 
+                      fontSize: '0.8rem', 
+                      fontWeight: '500' 
+                    }}>
+                      CGPA {latestJob.minCGPA}+
+                    </span>
+                  </div>
+                  <div style={{ marginTop: '1rem', textAlign: 'center', borderTop: '1px solid var(--border-color)', paddingTop: '0.75rem' }}>
+                    <Link to={`/jobs/${latestJob._id}`} onClick={handleDismissPopup} style={{ color: 'var(--accent-primary)', fontSize: '0.85rem', fontWeight: '600' }}>
+                      View Details
+                    </Link>
+                  </div>
+                </div>
+              )}
+            </div>
 
             {/* Messages trigger */}
             <Link 

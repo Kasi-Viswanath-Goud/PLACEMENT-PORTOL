@@ -11,6 +11,7 @@ export default function Dashboard() {
   const [applications, setApplications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [recommendedCount, setRecommendedCount] = useState(0);
+  const [recommendedJobs, setRecommendedJobs] = useState([]);
   const [showPopup, setShowPopup] = useState(true);
   const [latestJob, setLatestJob] = useState(null);
 
@@ -43,14 +44,20 @@ export default function Dashboard() {
         if (data && data.length > 0) {
           setLatestJob(data[0]); // newest job is at index 0
         }
-        // Count jobs where student has at least one skill match
-        const matches = data.filter(job => {
-          const studentSkills = user?.skills || [];
-          return job.requiredSkills.some(skill => 
+        // Match jobs based on student skills
+        const studentSkills = user?.skills || [];
+        const matchedJobs = data.map(job => {
+          const required = job.requiredSkills || [];
+          const matchCount = required.filter(skill => 
             studentSkills.some(s => s.toLowerCase().trim() === skill.toLowerCase().trim())
-          );
-        });
-        setRecommendedCount(matches.length || 6); // Fallback to 6 if no matches
+          ).length;
+          const matchPercentage = required.length > 0 ? Math.round((matchCount / required.length) * 100) : 0;
+          return { ...job, matchPercentage };
+        }).sort((a, b) => b.matchPercentage - a.matchPercentage);
+
+        const validMatches = matchedJobs.filter(j => j.matchPercentage > 0);
+        setRecommendedJobs(validMatches.length > 0 ? validMatches.slice(0, 2) : matchedJobs.slice(0, 2));
+        setRecommendedCount(validMatches.length > 0 ? validMatches.length : 6); // Fallback to 6 if no matches
       }
     } catch (err) {
       console.error(err);
@@ -75,102 +82,7 @@ export default function Dashboard() {
   return (
     <div className="animate-fade-in" style={{ padding: '2rem', position: 'relative' }}>
       
-      {/* 1. Animated Job Postings Banner (Replaced Welcome Banner) */}
-      {showPopup && latestJob && (
-        <div style={{
-          background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-          borderRadius: 'var(--radius-xl)',
-          padding: '2rem 3rem',
-          color: '#fff',
-          marginBottom: '2rem',
-          boxShadow: '0 10px 30px rgba(16, 185, 129, 0.3)',
-          position: 'relative',
-          overflow: 'hidden',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '1.5rem',
-          animation: 'popupAttention 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards, pulseGlow 2s infinite 1s'
-        }}>
-          <style>{`
-            @keyframes popupAttention {
-              0% { opacity: 0; transform: scale(0.8) translateY(-40px); }
-              40% { opacity: 1; transform: scale(1.05) translateY(10px); }
-              60% { transform: scale(0.98) translateY(-5px); }
-              80% { transform: scale(1.02) translateY(2px); }
-              100% { opacity: 1; transform: scale(1) translateY(0); }
-            }
-            @keyframes pulseGlow {
-              0% { box-shadow: 0 10px 30px rgba(16, 185, 129, 0.3); }
-              50% { box-shadow: 0 10px 50px rgba(16, 185, 129, 0.7), 0 0 20px rgba(255, 255, 255, 0.2) inset; }
-              100% { box-shadow: 0 10px 30px rgba(16, 185, 129, 0.3); }
-            }
-            @keyframes wiggleIcon {
-              0%, 100% { transform: rotate(0deg) scale(1); }
-              25% { transform: rotate(-15deg) scale(1.2); }
-              50% { transform: rotate(15deg) scale(1.2); }
-              75% { transform: rotate(-10deg) scale(1.1); }
-            }
-          `}</style>
-          
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'relative', zIndex: 2 }}>
-            <h2 style={{ fontSize: '1.8rem', fontWeight: 900, display: 'flex', alignItems: 'center', gap: '0.75rem', margin: 0 }}>
-              <Sparkles size={28} style={{ animation: 'wiggleIcon 2s infinite', color: '#fbbf24' }} /> 
-              New Job Postings Available!
-            </h2>
-            <button onClick={() => setShowPopup(false)} style={{ background: 'rgba(255,255,255,0.15)', border: 'none', cursor: 'pointer', color: '#fff', padding: '0.5rem', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'background 0.2s' }}>
-              <X size={20} />
-            </button>
-          </div>
-
-          {/* Job Card embedded in the banner */}
-          <div style={{
-            background: '#fff',
-            borderRadius: 'var(--radius-lg)',
-            padding: '1.5rem',
-            color: 'var(--text-primary)',
-            position: 'relative',
-            zIndex: 2,
-            boxShadow: '0 4px 20px rgba(0,0,0,0.1)'
-          }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-              <div style={{ display: 'flex', gap: '1rem' }}>
-                <div style={{ width: '56px', height: '56px', borderRadius: '12px', background: 'var(--bg-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid var(--border-color)' }}>
-                  <Building2 size={28} color="var(--text-muted)" />
-                </div>
-                <div>
-                  <h3 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '0.25rem', color: 'var(--text-primary)' }}>{latestJob.title}</h3>
-                  <div style={{ fontSize: '0.95rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>{latestJob.companyName}</div>
-                  <div style={{ display: 'flex', gap: '1rem', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-                    <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}><MapPin size={14} /> {latestJob.location}</span>
-                    <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}><Briefcase size={14} /> {latestJob.experienceRequired}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', margin: '1rem 0' }}>
-              {latestJob.requiredSkills?.slice(0, 4).map((skill, i) => (
-                <span key={i} style={{ background: 'var(--bg-primary)', padding: '0.25rem 0.75rem', borderRadius: '4px', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-                  {skill}
-                </span>
-              ))}
-            </div>
-
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '1rem', borderTop: '1px solid var(--border-color)' }}>
-              <div style={{ display: 'flex', gap: '1rem' }}>
-                <span className="badge" style={{ background: 'rgba(99, 102, 241, 0.1)', color: 'var(--accent-primary)' }}>{latestJob.jobType}</span>
-                <span className="badge badge-success">{latestJob.packageCTC} LPA</span>
-                <span className="badge badge-warning">Min CGPA: {latestJob.minCGPA}</span>
-              </div>
-              <Link to={`/jobs/${latestJob._id}`} className="btn-secondary" style={{ padding: '0.4rem 1rem' }}>Details</Link>
-            </div>
-          </div>
-          
-          {/* Subtle decorative circles */}
-          <div style={{ position: 'absolute', right: '-50px', top: '-50px', width: '200px', height: '200px', borderRadius: '50%', background: 'rgba(255,255,255,0.08)' }} />
-          <div style={{ position: 'absolute', right: '100px', bottom: '-80px', width: '180px', height: '180px', borderRadius: '50%', background: 'rgba(255,255,255,0.04)' }} />
-        </div>
-      )}
+      {/* Welcome Banner removed as per request (replaced by bell notifications) */}
 
       {/* 2. Stats & Metric Grid */}
       <div className="grid-4" style={{ marginBottom: '2rem' }}>
@@ -282,15 +194,7 @@ export default function Dashboard() {
             </div>
           </Link>
 
-          <Link to="/portfolio" className="glass-card" style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '1.25rem', textDecoration: 'none', transition: 'all 0.2s' }}>
-            <div style={{ width: '44px', height: '44px', borderRadius: '10px', background: 'var(--bg-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--accent-secondary)' }}>
-              <Star size={20} />
-            </div>
-            <div>
-              <h4 style={{ fontWeight: 700, fontSize: '0.95rem', color: 'var(--text-primary)' }}>Build Portfolio Website</h4>
-              <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.1rem' }}>Showcase projects and certificates</p>
-            </div>
-          </Link>
+
 
           <Link to="/jobs" className="glass-card" style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '1.25rem', textDecoration: 'none', transition: 'all 0.2s' }}>
             <div style={{ width: '44px', height: '44px', borderRadius: '10px', background: 'var(--bg-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--success)' }}>
@@ -398,21 +302,17 @@ export default function Dashboard() {
             </p>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
-              <div style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 'var(--radius-md)', padding: '0.75rem 1rem' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', fontWeight: 800, color: '#10b981' }}>
-                  <span>95% MATCH</span>
-                  <span style={{ color: 'rgba(255,255,255,0.4)' }}>Google</span>
+              {recommendedJobs.length > 0 ? recommendedJobs.map((job, idx) => (
+                <div key={idx} style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 'var(--radius-md)', padding: '0.75rem 1rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', fontWeight: 800, color: job.matchPercentage > 70 ? '#10b981' : '#f59e0b' }}>
+                    <span>{job.matchPercentage > 0 ? `${job.matchPercentage}% MATCH` : 'TOP PICK'}</span>
+                    <span style={{ color: 'rgba(255,255,255,0.4)' }}>{job.companyName}</span>
+                  </div>
+                  <h4 style={{ fontSize: '0.9rem', fontWeight: 700, marginTop: '0.2rem' }}>{job.title}</h4>
                 </div>
-                <h4 style={{ fontSize: '0.9rem', fontWeight: 700, marginTop: '0.2rem' }}>Software Engineer</h4>
-              </div>
-
-              <div style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 'var(--radius-md)', padding: '0.75rem 1rem' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', fontWeight: 800, color: '#10b981' }}>
-                  <span>92% MATCH</span>
-                  <span style={{ color: 'rgba(255,255,255,0.4)' }}>Amazon</span>
-                </div>
-                <h4 style={{ fontSize: '0.9rem', fontWeight: 700, marginTop: '0.2rem' }}>React Engineer</h4>
-              </div>
+              )) : (
+                <p style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.5)', textAlign: 'center', fontStyle: 'italic', padding: '1rem 0' }}>No matching jobs found right now.</p>
+              )}
             </div>
           </div>
 

@@ -38,6 +38,7 @@ export const AuthProvider = ({ children }) => {
 
   const login = (newToken, userData) => {
     localStorage.setItem('token', newToken);
+    sessionStorage.removeItem('hasSeenJobPopup');
     setToken(newToken);
     setUser(userData);
   };
