@@ -10,6 +10,8 @@ const applicationSchema = new mongoose.Schema({
   },
   matchScore: { type: Number, default: 0 },
   skillMatchPercent: { type: Number, default: 0 },
+  interviewDate: { type: String, default: '' },
+  interviewTime: { type: String, default: '' },
   notes: { type: String, default: '' },
   feedback: { type: String, default: '' },
   coverLetter: { type: String, default: '' },

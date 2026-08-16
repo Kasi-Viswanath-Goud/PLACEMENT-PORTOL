@@ -6,7 +6,11 @@ const User = require('../models/User');
 const { authenticate, authorize } = require('../middleware/auth');
 const { isMongoConnected } = require('../config/db');
 
-const mockApplications = [];
+const mockApplications = [
+  { _id: 'app_1', jobId: 'job_1', studentId: 'student_1', status: 'Applied', matchScore: 92, appliedAt: new Date(Date.now() - 2 * 86400000) },
+  { _id: 'app_2', jobId: 'job_1', studentId: 'student_2', status: 'Shortlisted', matchScore: 88, appliedAt: new Date(Date.now() - 3 * 86400000) },
+  { _id: 'app_3', jobId: 'job_1', studentId: 'student_3', status: 'Applied', matchScore: 75, appliedAt: new Date(Date.now() - 1 * 86400000) }
+];
 const getMockUsers = () => { try { return require('./authRoutes').mockUsers; } catch { return []; } };
 const getMockJobs = () => { try { return require('./jobRoutes').mockJobs; } catch { return []; } };
 
@@ -115,20 +119,31 @@ router.get('/job/:jobId', authenticate, async (req, res) => {
 // Update Application Status (HR/Admin)
 router.put('/:id/status', authenticate, authorize('company', 'admin'), async (req, res) => {
   try {
-    const { status, feedback, notes } = req.body;
+    const { status, feedback, notes, interviewDate, interviewTime } = req.body;
     let app, student, job;
 
     if (isMongoConnected()) {
-      app = await Application.findByIdAndUpdate(req.params.id, { status, feedback, notes, updatedAt: new Date() }, { new: true }).populate('studentId').populate('jobId');
+      app = await Application.findByIdAndUpdate(req.params.id, { 
+        status, 
+        feedback, 
+        notes, 
+        interviewDate, 
+        interviewTime, 
+        updatedAt: new Date() 
+      }, { new: true }).populate('studentId').populate('jobId');
+      
       if (!app) return res.status(404).json({ message: 'Application not found.' });
       student = app.studentId;
       job = app.jobId;
     } else {
       const idx = mockApplications.findIndex(a => a._id === req.params.id);
       if (idx === -1) return res.status(404).json({ message: 'Application not found.' });
+      
       if (status) mockApplications[idx].status = status;
       if (feedback) mockApplications[idx].feedback = feedback;
       if (notes) mockApplications[idx].notes = notes;
+      if (interviewDate) mockApplications[idx].interviewDate = interviewDate;
+      if (interviewTime) mockApplications[idx].interviewTime = interviewTime;
       mockApplications[idx].updatedAt = new Date();
       app = mockApplications[idx];
 
@@ -138,22 +153,37 @@ router.put('/:id/status', authenticate, authorize('company', 'admin'), async (re
       job = jobs.find(j => j._id === app.jobId);
     }
 
-    // Automation: Send email if selected/shortlisted
-    if (status === 'Selected' || status === 'Shortlisted') {
+    // Automation: Send email if selected, shortlisted, or interview scheduled
+    if (status === 'Selected' || status === 'Shortlisted' || status === 'Interview Scheduled') {
+      const { sendEmail } = require('../utils/emailService');
       const studentEmail = student?.email;
       const studentName = student?.name || 'Candidate';
       const jobTitle = job?.title || 'the position';
       const companyName = job?.companyName || 'our company';
 
       if (studentEmail) {
-        console.log(`\n\n========== 📧 AUTOMATED EMAIL SENT ==========`);
-        console.log(`To: ${studentEmail}`);
-        console.log(`Subject: Congratulations! Update on your application for ${jobTitle}`);
-        console.log(`\nDear ${studentName},\n`);
-        console.log(`We are thrilled to inform you that you have been ${status.toLowerCase()} for the ${jobTitle} position at ${companyName}.`);
-        console.log(`\nPlease log in to your ALTS Placement Portal dashboard for further details and next steps.`);
-        console.log(`\nBest regards,\nThe HR Team at ${companyName}`);
-        console.log(`=================================================\n\n`);
+        let subject = `Update on your application for ${jobTitle}`;
+        let htmlBody = `<p>Dear ${studentName},</p>`;
+        
+        if (status === 'Selected') {
+          subject = `Congratulations! You have been selected for ${jobTitle}`;
+          htmlBody += `<p>We are thrilled to inform you that you have been <strong>Selected</strong> for the ${jobTitle} position at ${companyName}.</p>`;
+        } else if (status === 'Shortlisted') {
+          subject = `Update: You have been shortlisted for ${jobTitle}`;
+          htmlBody += `<p>We are pleased to inform you that you have been <strong>Shortlisted</strong> for the ${jobTitle} position at ${companyName}.</p>`;
+        } else if (status === 'Interview Scheduled') {
+          subject = `Interview Scheduled: ${jobTitle} at ${companyName}`;
+          htmlBody += `<p>We are pleased to inform you that an interview has been scheduled for your application to the ${jobTitle} position at ${companyName}.</p>`;
+          if (interviewDate) htmlBody += `<p><strong>Date:</strong> ${interviewDate}</p>`;
+          if (interviewTime) htmlBody += `<p><strong>Time:</strong> ${interviewTime}</p>`;
+        }
+        
+        htmlBody += `<p>Please log in to your ALTS Placement Portal dashboard for further details and next steps.</p>
+                     <br/>
+                     <p>Best regards,<br/>The HR Team at ${companyName}</p>`;
+
+        // Send asynchronously so it doesn't block the API response
+        sendEmail(studentEmail, subject, htmlBody);
       }
     }
 

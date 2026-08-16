@@ -12,12 +12,23 @@ router.get('/conversations', authenticate, async (req, res) => {
   try {
     if (isMongoConnected()) {
       const Message = require('../models/Message');
+      const User = require('../models/User'); // Import User model
       const messages = await Message.aggregate([
         { $match: { $or: [{ senderId: req.user.id }, { receiverId: req.user.id }] } },
         { $sort: { createdAt: -1 } },
         { $group: { _id: '$conversationId', lastMessage: { $first: '$$ROOT' }, unread: { $sum: { $cond: [{ $and: [{ $eq: ['$receiverId', req.user.id] }, { $eq: ['$isRead', false] }] }, 1, 0] } } } }
       ]);
-      return res.json(messages);
+      
+      // Populate otherUser details for MongoDB
+      const convList = await Promise.all(messages.map(async (conv) => {
+        const ids = conv._id.split('_');
+        const otherId = ids[0] === req.user.id ? ids[1] : ids[0];
+        let otherUser = await User.findById(otherId).select('name role companyName');
+        if (!otherUser) otherUser = { _id: otherId, name: 'Unknown', role: 'unknown' };
+        return { ...conv, otherUser };
+      }));
+      
+      return res.json(convList);
     } else {
       const convMap = {};
       mockMessages.filter(m => m.senderId === req.user.id || m.receiverId === req.user.id).forEach(m => {

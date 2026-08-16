@@ -111,9 +111,15 @@ export default function History() {
                     {app.status === 'Selected' && <CheckCircle2 size={14}/>}
                     {app.status}
                   </span>
-                  <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                    Match Score: <strong style={{ color: 'var(--text-primary)' }}>{app.matchScore}%</strong>
-                  </div>
+                  
+                  {app.status === 'Interview Scheduled' && app.interviewDate && app.interviewTime && (
+                    <div style={{ fontSize: '0.8rem', color: 'var(--text-primary)', background: 'var(--bg-primary)', padding: '0.4rem 0.6rem', borderRadius: '4px', border: '1px solid var(--border-color)', marginTop: '0.25rem' }}>
+                      <Calendar size={12} style={{ marginRight: '4px', display: 'inline', verticalAlign: 'middle' }} />
+                      <strong style={{ verticalAlign: 'middle' }}>{new Date(app.interviewDate).toLocaleDateString()} at {app.interviewTime}</strong>
+                    </div>
+                  )}
+
+
                 </div>
               </div>
             ))}

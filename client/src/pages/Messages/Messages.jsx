@@ -78,15 +78,29 @@ export const Messages = () => {
   };
 
   return (
-    <div className="container animate-fade-in" style={{ padding: '2rem', height: 'calc(100vh - 80px)' }}>
+    <div className="animate-fade-in" style={{ 
+      height: '100%', 
+      padding: '0 2rem 2rem 2rem', 
+      display: 'flex', 
+      flexDirection: 'column', 
+      boxSizing: 'border-box',
+      overflow: 'hidden'
+    }}>
       
-      <div className="glass-panel" style={{ display: 'grid', gridTemplateColumns: '300px 1fr', height: '100%', overflow: 'hidden' }}>
+      <div className="glass-panel" style={{ 
+        flex: 1, 
+        display: 'grid', 
+        gridTemplateColumns: '320px 1fr', 
+        height: '100%', 
+        overflow: 'hidden', 
+        borderRadius: 'var(--radius-lg)' 
+      }}>
         
         {/* Sidebar */}
-        <div style={{ borderRight: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column' }}>
-          <div style={{ padding: '1.5rem', borderBottom: '1px solid var(--border-color)' }}>
-            <h2 style={{ fontSize: '1.25rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <MessageSquare size={20} /> Messages
+        <div style={{ borderRight: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', background: 'var(--bg-secondary)', height: '100%' }}>
+          <div style={{ padding: '1.25rem 1.5rem', borderBottom: '1px solid var(--border-color)', flexShrink: 0 }}>
+            <h2 style={{ fontSize: '1.25rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '0.5rem', margin: 0 }}>
+              <MessageSquare size={20} color="var(--accent-primary)" /> Messages
             </h2>
           </div>
           
@@ -103,31 +117,38 @@ export const Messages = () => {
                   key={conv._id}
                   onClick={() => setActiveConv(conv)}
                   style={{ 
-                    padding: '1.25rem 1rem', 
+                    padding: '1rem 1.25rem', 
                     cursor: 'pointer',
-                    background: activeConv?._id === conv._id ? 'rgba(99,102,241,0.1)' : 'transparent',
+                    background: activeConv?._id === conv._id ? 'rgba(99,102,241,0.08)' : 'transparent',
                     borderBottom: '1px solid var(--border-color)',
                     display: 'flex', alignItems: 'center', gap: '1rem',
                     borderLeft: activeConv?._id === conv._id ? '3px solid var(--accent-primary)' : '3px solid transparent',
-                    transition: 'all 0.2s ease'
+                    transition: 'background 0.2s ease'
                   }}
                 >
-                  <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'var(--bg-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <div style={{ width: '46px', height: '46px', borderRadius: '50%', background: 'var(--bg-primary)', border: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                     {conv.otherUser?.role === 'company' ? <Building2 size={20} color="var(--text-muted)" /> : <User size={20} color="var(--text-muted)" />}
                   </div>
                   <div style={{ flex: 1, overflow: 'hidden' }}>
-                    <div style={{ fontWeight: 600, fontSize: '0.95rem', whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden' }}>
-                      {conv.otherUser?.name || 'Recruiter'}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '2px' }}>
+                      <div style={{ fontWeight: 600, fontSize: '0.95rem', whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden' }}>
+                        {conv.otherUser?.name || 'Recruiter'}
+                      </div>
+                      <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', flexShrink: 0, marginLeft: '0.5rem' }}>
+                        {conv.lastMessage?.createdAt ? new Date(conv.lastMessage.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
+                      </div>
                     </div>
-                    <div style={{ fontSize: '0.8rem', color: conv.unread > 0 ? 'var(--text-primary)' : 'var(--text-muted)', whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden', fontWeight: conv.unread > 0 ? 600 : 400 }}>
-                      {conv.lastMessage?.content || 'Say hello...'}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div style={{ fontSize: '0.85rem', color: conv.unread > 0 ? 'var(--text-primary)' : 'var(--text-muted)', whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden', fontWeight: conv.unread > 0 ? 600 : 400 }}>
+                        {conv.lastMessage?.content || 'Say hello...'}
+                      </div>
+                      {conv.unread > 0 && (
+                        <div style={{ background: 'var(--success)', color: '#fff', fontSize: '0.7rem', fontWeight: 700, minWidth: '18px', height: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '9999px', padding: '0 4px', flexShrink: 0, marginLeft: '0.5rem' }}>
+                          {conv.unread}
+                        </div>
+                      )}
                     </div>
                   </div>
-                  {conv.unread > 0 && (
-                    <div style={{ background: 'var(--accent-primary)', color: '#fff', fontSize: '0.7rem', fontWeight: 700, padding: '0.1rem 0.5rem', borderRadius: '9999px' }}>
-                      {conv.unread}
-                    </div>
-                  )}
                 </div>
               ))
             )}
@@ -135,39 +156,91 @@ export const Messages = () => {
         </div>
 
         {/* Chat Area */}
-        <div style={{ display: 'flex', flexDirection: 'column', background: 'var(--bg-secondary)' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', background: '#0b141a', position: 'relative', height: '100%', minWidth: 0 }}>
+          
+          {/* WhatsApp Doodle Background Pattern */}
+          <div style={{ 
+            position: 'absolute', 
+            inset: 0, 
+            opacity: 0.08, 
+            backgroundImage: 'url("https://static.whatsapp.net/rsrc.php/v3/y8/r/2eJ_3p9-O2Z.png")', 
+            backgroundRepeat: 'repeat',
+            backgroundSize: '400px',
+            zIndex: 0, 
+            pointerEvents: 'none' 
+          }} />
+
           {activeConv ? (
             <>
               {/* Chat Header */}
-              <div style={{ padding: '1rem 1.5rem', borderBottom: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', gap: '1rem', background: 'var(--bg-card)' }}>
-                <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'var(--accent-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 600 }}>
+              <div style={{ padding: '10px 16px', height: '65px', borderBottom: '1px solid #222d34', display: 'flex', alignItems: 'center', gap: '15px', background: '#202c33', zIndex: 1, boxSizing: 'border-box', flexShrink: 0 }}>
+                <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: '#dfe5e7', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#54656f', fontWeight: 600, fontSize: '1.2rem', flexShrink: 0 }}>
                   {activeConv.otherUser?.name?.charAt(0) || 'U'}
                 </div>
-                <div>
-                  <div style={{ fontWeight: 700 }}>{activeConv.otherUser?.name || 'Recruiter'}</div>
-                  <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{activeConv.otherUser?.role === 'company' ? activeConv.otherUser?.companyName : 'Student'}</div>
+                <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', overflow: 'hidden' }}>
+                  <div style={{ fontWeight: 400, fontSize: '1rem', color: '#e9edef', whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden' }}>{activeConv.otherUser?.name || 'Recruiter'}</div>
+                  <div style={{ fontSize: '0.8125rem', color: '#8696a0', marginTop: '2px', whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden' }}>{activeConv.otherUser?.role === 'company' ? activeConv.otherUser?.companyName : 'Student'}</div>
                 </div>
               </div>
 
               {/* Messages History */}
-              <div style={{ flex: 1, overflowY: 'auto', padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                {messages.map(msg => {
+              <div style={{ flex: 1, overflowY: 'auto', padding: '1.5rem 5%', display: 'flex', flexDirection: 'column', gap: '2px', zIndex: 1 }}>
+                {messages.map((msg, index) => {
                   const isMine = msg.senderId === userId;
+                  const showTail = index === 0 || messages[index - 1]?.senderId !== msg.senderId;
+                  const marginT = showTail && index !== 0 ? '12px' : '2px';
+
                   return (
-                    <div key={msg._id} style={{ display: 'flex', justifyContent: isMine ? 'flex-end' : 'flex-start' }}>
+                    <div key={msg._id} style={{ display: 'flex', justifyContent: isMine ? 'flex-end' : 'flex-start', marginTop: marginT, width: '100%' }}>
                       <div style={{ 
-                        maxWidth: '70%', 
-                        padding: '0.75rem 1rem', 
-                        borderRadius: 'var(--radius-lg)',
-                        background: isMine ? 'var(--accent-primary)' : 'var(--bg-primary)',
-                        color: isMine ? '#fff' : 'var(--text-primary)',
-                        border: isMine ? 'none' : '1px solid var(--border-color)',
-                        borderBottomRightRadius: isMine ? '4px' : 'var(--radius-lg)',
-                        borderBottomLeftRadius: isMine ? 'var(--radius-lg)' : '4px'
+                        maxWidth: '75%', 
+                        minWidth: '100px',
+                        padding: '6px 7px 8px 9px', 
+                        borderRadius: '7.5px',
+                        background: isMine ? '#005c4b' : '#202c33',
+                        color: '#e9edef',
+                        borderTopRightRadius: isMine && showTail ? '0px' : '7.5px',
+                        borderTopLeftRadius: !isMine && showTail ? '0px' : '7.5px',
+                        boxShadow: '0 1px 0.5px rgba(11,20,26,.13)',
+                        position: 'relative'
                       }}>
-                        <div style={{ fontSize: '0.95rem', lineHeight: 1.5 }}>{msg.content}</div>
-                        <div style={{ fontSize: '0.7rem', opacity: 0.7, marginTop: '0.25rem', textAlign: 'right' }}>
-                          {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        {/* The little tail SVG */}
+                        {showTail && isMine && (
+                          <svg viewBox="0 0 8 13" width="8" height="13" style={{ position: 'absolute', top: 0, right: '-8px', color: '#005c4b' }}>
+                            <path opacity=".13" fill="#0000000" d="M1.533 3.118L8 12.118V1H2.8z"></path>
+                            <path fill="currentColor" d="M1.533 2.118L8 11.118V0H2.8z"></path>
+                          </svg>
+                        )}
+                        {showTail && !isMine && (
+                          <svg viewBox="0 0 8 13" width="8" height="13" style={{ position: 'absolute', top: 0, left: '-8px', color: '#202c33' }}>
+                            <path opacity=".13" fill="#0000000" d="M1.533 3.118L8 12.118V1H2.8z" transform="scale(-1, 1) translate(-8, 0)"></path>
+                            <path fill="currentColor" d="M1.533 2.118L8 11.118V0H2.8z" transform="scale(-1, 1) translate(-8, 0)"></path>
+                          </svg>
+                        )}
+
+                        <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'flex-end', justifyContent: 'space-between' }}>
+                          <span style={{ fontSize: '0.9rem', lineHeight: '19px', wordWrap: 'break-word', whiteSpace: 'pre-wrap', paddingRight: '15px' }}>
+                            {msg.content}
+                          </span>
+                          <div style={{ 
+                            fontSize: '0.6875rem', 
+                            color: 'rgba(255,255,255,0.6)', 
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            gap: '3px',
+                            marginLeft: 'auto',
+                            marginTop: '-10px',
+                            float: 'right',
+                            position: 'relative',
+                            bottom: '-4px'
+                          }}>
+                            {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            {isMine && (
+                              <svg viewBox="0 0 16 15" width="16" height="15" style={{ color: '#53bdeb' }}>
+                                <path fill="currentColor" d="M15.01 3.316l-.478-.372a.365.365 0 0 0-.51.063L8.666 9.879a.32.32 0 0 1-.484.033l-.358-.325a.319.319 0 0 0-.484.032l-.378.483a.418.418 0 0 0 .036.541l1.32 1.266c.143.14.361.125.484-.033l6.272-8.048a.366.366 0 0 0-.064-.512zm-4.1 0l-.478-.372a.365.365 0 0 0-.51.063L4.566 9.879a.32.32 0 0 1-.484.033L1.891 7.769a.366.366 0 0 0-.515.006l-.423.433a.364.364 0 0 0 .006.514l3.258 3.185c.143.14.361.125.484-.033l6.272-8.048a.365.365 0 0 0-.063-.51z"/>
+                              </svg>
+                            )}
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -177,25 +250,55 @@ export const Messages = () => {
               </div>
 
               {/* Chat Input */}
-              <div style={{ padding: '1.25rem', borderTop: '1px solid var(--border-color)', background: 'var(--bg-card)' }}>
-                <form onSubmit={sendMessage} style={{ display: 'flex', gap: '1rem' }}>
-                  <input 
-                    type="text" 
-                    placeholder="Type a message..." 
-                    style={{ flex: 1, background: 'var(--bg-primary)', border: '1px solid var(--border-color)', borderRadius: '9999px', padding: '0.75rem 1.25rem', color: 'var(--text-primary)', outline: 'none' }}
-                    value={newMessage}
-                    onChange={(e) => setNewMessage(e.target.value)}
-                  />
-                  <button type="submit" className="btn-primary" style={{ borderRadius: '50%', width: '48px', height: '48px', padding: 0 }} disabled={!newMessage.trim()}>
-                    <Send size={18} />
+              <div style={{ minHeight: '62px', padding: '10px 16px', background: '#202c33', zIndex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <form onSubmit={sendMessage} style={{ display: 'flex', gap: '12px', alignItems: 'center', width: '100%', maxWidth: '900px' }}>
+                  <div style={{ flex: 1, background: '#2a3942', borderRadius: '8px', padding: '9px 12px', display: 'flex', alignItems: 'center' }}>
+                    <input 
+                      type="text" 
+                      placeholder="Type a message" 
+                      style={{ 
+                        width: '100%', 
+                        background: 'transparent', 
+                        border: 'none', 
+                        color: '#d1d7db', 
+                        outline: 'none', 
+                        fontSize: '0.9375rem',
+                        fontFamily: 'inherit'
+                      }}
+                      value={newMessage}
+                      onChange={(e) => setNewMessage(e.target.value)}
+                    />
+                  </div>
+                  <button 
+                    type="submit" 
+                    style={{ 
+                      background: 'transparent', 
+                      border: 'none', 
+                      color: newMessage.trim() ? '#00a884' : '#8696a0', 
+                      cursor: newMessage.trim() ? 'pointer' : 'default',
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      justifyContent: 'center', 
+                      padding: '8px',
+                      transition: 'color 0.2s',
+                      flexShrink: 0
+                    }} 
+                    disabled={!newMessage.trim()}
+                  >
+                    <Send size={24} />
                   </button>
                 </form>
               </div>
             </>
           ) : (
-            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)' }}>
-              <MessageSquare size={64} style={{ opacity: 0.2, marginBottom: '1rem' }} />
-              <p>Select a conversation to start messaging</p>
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: '#8696a0', zIndex: 1 }}>
+              <div style={{ marginBottom: '1.5rem' }}>
+                <svg viewBox="0 0 100 100" width="100" height="100" opacity="0.3">
+                  <path fill="currentColor" d="M50 0C22.4 0 0 22.4 0 50c0 11.2 3.7 21.6 10 29.8L5 95l16.1-4.7C29.6 97 39.5 100 50 100c27.6 0 50-22.4 50-50S77.6 0 50 0zm0 91.7c-9.5 0-18.4-2.8-25.7-7.7l-1.8-1.1-10 2.9 3-9.5-1.2-1.9C9 66.8 6.2 58.7 6.2 50c0-23 18.7-41.7 41.7-41.7S89.6 27 89.6 50 70.9 91.7 50 91.7z"/>
+                </svg>
+              </div>
+              <h1 style={{ marginBottom: '1rem', color: '#e9edef', fontSize: '2rem', fontWeight: 300 }}>WhatsApp Web (Clone)</h1>
+              <p style={{ fontSize: '0.875rem' }}>Select a conversation from the sidebar to start messaging.</p>
             </div>
           )}
         </div>

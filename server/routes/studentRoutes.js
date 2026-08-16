@@ -256,4 +256,74 @@ ${userName}`;
   }
 });
 
+// Generate Short Resume from Profile
+router.get('/generate-resume', authenticate, async (req, res) => {
+  try {
+    let userData;
+
+    if (isMongoConnected()) {
+      userData = await User.findById(req.user.id).select('-password');
+      if (!userData) return res.status(404).json({ message: 'User not found.' });
+    } else {
+      const users = getMockUsers();
+      const found = users.find(u => u._id === req.user.id);
+      if (!found) return res.status(404).json({ message: 'User not found.' });
+      const { password, ...rest } = found;
+      userData = rest;
+    }
+
+    // Build resume data object
+    const resume = {
+      name: userData.name || 'Student Name',
+      email: userData.email || '',
+      phone: userData.phone || '',
+      headline: userData.headline || '',
+      summary: userData.summary || '',
+      college: userData.college || '',
+      degree: userData.degree || '',
+      branch: userData.branch || '',
+      cgpa: userData.cgpa || 0,
+      passingYear: userData.passingYear || '',
+      skills: userData.skills || [],
+      programmingLanguages: userData.programmingLanguages || [],
+      projects: (userData.projects || []).map(p => ({
+        title: p.title || '',
+        description: p.description || '',
+        techStack: p.techStack || [],
+        liveUrl: p.liveUrl || '',
+        githubUrl: p.githubUrl || ''
+      })),
+      internships: (userData.internships || []).map(i => ({
+        company: i.company || '',
+        role: i.role || '',
+        duration: i.duration || '',
+        description: i.description || ''
+      })),
+      experience: (userData.experience || []).map(e => ({
+        company: e.company || '',
+        position: e.position || '',
+        duration: e.duration || '',
+        description: e.description || ''
+      })),
+      certifications: (userData.certifications || []).map(c => ({
+        title: c.title || '',
+        issuer: c.issuer || '',
+        date: c.date || ''
+      })),
+      achievements: (userData.achievements || []).map(a => ({
+        title: a.title || '',
+        description: a.description || ''
+      })),
+      github: userData.github || '',
+      linkedin: userData.linkedin || '',
+      portfolio: userData.portfolio || ''
+    };
+
+    return res.json({ resume });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Error generating resume.', error: err.message });
+  }
+});
+
 module.exports = router;

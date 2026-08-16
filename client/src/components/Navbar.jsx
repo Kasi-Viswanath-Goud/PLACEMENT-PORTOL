@@ -28,15 +28,13 @@ export const Navbar = () => {
         
         {/* Brand */}
         <Link to={user ? `/${user.role}-dashboard` : '/'} style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', textDecoration: 'none' }}>
-          <img src="/alts_logo_v2.png" alt="ALTS Logo" style={{ 
-            height: '72px', 
+          <img src="/logo.png" alt="ALTS Logo" style={{ 
+            height: '40px', 
             objectFit: 'contain', 
-            filter: theme === 'dark' ? 'brightness(1.8) contrast(1.1)' : 'none',
-            transition: 'filter 0.3s ease',
             marginRight: '0.5rem'
           }} />
           <div style={{ display: 'flex', flexDirection: 'column' }}>
-            <div style={{ fontFamily: 'var(--font-heading)', fontWeight: 800, fontSize: '1.5rem', color: '#B31B1B', letterSpacing: '-0.02em', lineHeight: 1 }}>
+            <div style={{ fontFamily: 'var(--font-heading)', fontWeight: 800, fontSize: '1.5rem', color: '#ef4444', letterSpacing: '-0.02em', lineHeight: 1 }}>
               ALTS
             </div>
             <div style={{ fontSize: '0.8rem', color: 'var(--text-primary)', letterSpacing: '0.05em', marginTop: '2px', fontWeight: 600, fontFamily: 'var(--font-heading)' }}>

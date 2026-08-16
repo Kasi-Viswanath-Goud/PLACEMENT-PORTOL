@@ -22,6 +22,9 @@ export const ApplicantsList = () => {
   // Profile modal state
   const [profileModal, setProfileModal] = useState({ open: false, applicant: null });
 
+  // Interview Schedule modal state
+  const [scheduleModal, setScheduleModal] = useState({ open: false, applicantId: null, date: '', time: '' });
+
   useEffect(() => {
     fetchData();
   }, [jobId]);
@@ -42,21 +45,40 @@ export const ApplicantsList = () => {
     }
   };
 
-  const updateStatus = async (appId, newStatus) => {
+  const updateStatus = async (appId, newStatus, interviewDate, interviewTime) => {
     try {
+      const payload = { status: newStatus };
+      if (interviewDate) payload.interviewDate = interviewDate;
+      if (interviewTime) payload.interviewTime = interviewTime;
+
       const res = await fetch(`/api/applications/${appId}/status`, {
         method: 'PUT',
         headers: { 
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}` 
         },
-        body: JSON.stringify({ status: newStatus })
+        body: JSON.stringify(payload)
       });
       if (res.ok) {
-        setApplicants(applicants.map(a => a._id === appId ? { ...a, status: newStatus } : a));
+        setApplicants(applicants.map(a => a._id === appId ? { ...a, status: newStatus, interviewDate, interviewTime } : a));
       }
     } catch (err) {
       console.error(err);
+    }
+  };
+
+  const handleStatusChange = (appId, newStatus) => {
+    if (newStatus === 'Interview Scheduled') {
+      setScheduleModal({ open: true, applicantId: appId, date: '', time: '' });
+    } else {
+      updateStatus(appId, newStatus);
+    }
+  };
+
+  const confirmSchedule = () => {
+    if (scheduleModal.applicantId && scheduleModal.date && scheduleModal.time) {
+      updateStatus(scheduleModal.applicantId, 'Interview Scheduled', scheduleModal.date, scheduleModal.time);
+      setScheduleModal({ open: false, applicantId: null, date: '', time: '' });
     }
   };
 
@@ -181,6 +203,11 @@ export const ApplicantsList = () => {
                       <span className={`badge ${app.status === 'Applied' ? 'badge-primary' : app.status === 'Selected' ? 'badge-success' : app.status === 'Rejected' ? 'badge-danger' : 'badge-warning'}`}>
                         {app.status}
                       </span>
+                      {app.status === 'Interview Scheduled' && app.interviewDate && app.interviewTime && (
+                        <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.4rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                          <Clock size={12} /> {new Date(app.interviewDate).toLocaleDateString()} {app.interviewTime}
+                        </div>
+                      )}
                     </td>
                     <td style={{ padding: '1rem', textAlign: 'right' }}>
                       <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end', alignItems: 'center' }}>
@@ -188,7 +215,7 @@ export const ApplicantsList = () => {
                           className="form-select" 
                           style={{ padding: '0.4rem 1rem', width: 'auto', fontSize: '0.85rem' }}
                           value={app.status}
-                          onChange={(e) => updateStatus(app._id, e.target.value)}
+                          onChange={(e) => handleStatusChange(app._id, e.target.value)}
                         >
                           <option value="Applied">Applied</option>
                           <option value="Shortlisted">Shortlist</option>
@@ -304,7 +331,7 @@ export const ApplicantsList = () => {
             {/* PDF/Document Viewer */}
             <div style={{ flex: 1, background: '#525659', position: 'relative' }}>
               <iframe
-                src={resumeModal.url}
+                src={(resumeModal.url.toLowerCase().endsWith('.docx') || resumeModal.url.toLowerCase().endsWith('.doc')) ? `${resumeModal.url}?view=html` : resumeModal.url}
                 title="Resume Viewer"
                 style={{
                   width: '100%', height: '100%', border: 'none',
@@ -546,7 +573,12 @@ export const ApplicantsList = () => {
               {/* Contact & Basics */}
               <div className="grid-2">
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-                  <Mail size={16} /> {profileModal.applicant.studentId?.email || 'N/A'}
+                  <Mail size={16} /> 
+                  {profileModal.applicant.studentId?.email ? (
+                    <a href={`mailto:${profileModal.applicant.studentId.email}`} style={{ color: 'var(--accent-primary)', textDecoration: 'none' }}>
+                      {profileModal.applicant.studentId.email}
+                    </a>
+                  ) : 'N/A'}
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
                   <Phone size={16} /> {profileModal.applicant.studentId?.phone || 'N/A'}
@@ -627,6 +659,82 @@ export const ApplicantsList = () => {
                 </div>
               </div>
 
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ═══════════════════════════════════════════════════════════ */}
+      {/* Schedule Interview Modal                                    */}
+      {/* ═══════════════════════════════════════════════════════════ */}
+      {scheduleModal.open && (
+        <div 
+          style={{
+            position: 'fixed', inset: 0, zIndex: 9999,
+            background: 'rgba(0,0,0,0.6)',
+            backdropFilter: 'blur(8px)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            padding: '2rem',
+            animation: 'fadeIn 0.2s ease'
+          }}
+          onClick={() => setScheduleModal({ open: false, applicantId: null, date: '', time: '' })}
+        >
+          <div 
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              background: 'var(--bg-primary)',
+              border: '1px solid var(--border-color)',
+              borderRadius: 'var(--radius-lg, 16px)',
+              width: '100%', maxWidth: '400px',
+              padding: '2rem',
+              boxShadow: '0 25px 60px rgba(0,0,0,0.5)',
+              animation: 'slideUp 0.3s ease'
+            }}
+          >
+            <h3 style={{ marginBottom: '1rem', fontWeight: 700 }}>Schedule Interview</h3>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '1.5rem' }}>
+              Select a date and time for the interview. The applicant will be notified.
+            </p>
+            
+            <div style={{ marginBottom: '1rem' }}>
+              <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>Date</label>
+              <input 
+                type="date" 
+                className="form-input"
+                style={{ width: '100%', padding: '0.75rem', borderRadius: 'var(--radius-sm)', background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', color: 'var(--text-primary)' }}
+                value={scheduleModal.date}
+                onChange={(e) => setScheduleModal({ ...scheduleModal, date: e.target.value })}
+                onClick={(e) => { try { e.target.showPicker(); } catch (err) {} }}
+              />
+            </div>
+
+            <div style={{ marginBottom: '1.5rem' }}>
+              <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>Time</label>
+              <input 
+                type="time" 
+                className="form-input"
+                style={{ width: '100%', padding: '0.75rem', borderRadius: 'var(--radius-sm)', background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', color: 'var(--text-primary)' }}
+                value={scheduleModal.time}
+                onChange={(e) => setScheduleModal({ ...scheduleModal, time: e.target.value })}
+              />
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
+              <button 
+                onClick={() => setScheduleModal({ open: false, applicantId: null, date: '', time: '' })} 
+                className="btn-secondary"
+                style={{ padding: '0.5rem 1rem' }}
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={confirmSchedule} 
+                className="btn-primary"
+                disabled={!scheduleModal.date || !scheduleModal.time}
+                style={{ padding: '0.5rem 1rem', opacity: (!scheduleModal.date || !scheduleModal.time) ? 0.5 : 1 }}
+              >
+                Confirm Schedule
+              </button>
             </div>
           </div>
         </div>

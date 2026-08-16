@@ -40,7 +40,7 @@ export const LandingPage = () => {
             }}>
               Accelerate Your Career with{' '}
               <span style={{ 
-                color: '#B31B1B' 
+                color: '#ef4444' 
               }}>ALTS</span>
             </h1>
             

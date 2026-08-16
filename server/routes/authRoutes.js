@@ -7,7 +7,38 @@ const { authenticate, JWT_SECRET } = require('../middleware/auth');
 const { isMongoConnected } = require('../config/db');
 
 // In-Memory Fallback Store
-const mockUsers = [];
+const mockUsers = [
+  {
+    _id: 'student_1', name: 'Rahul Sharma', email: 'rahul@campus.edu', role: 'student',
+    cgpa: 8.8, branch: 'Computer Science', passingYear: 2026, phone: '+91 9876543210',
+    college: 'IIT Delhi', degree: 'B.Tech', headline: 'Full-Stack Developer | AI Enthusiast',
+    skills: ['React', 'Node.js', 'Python', 'MongoDB', 'AWS'],
+    education: [{ institution: 'IIT Delhi', degree: 'B.Tech', field: 'Computer Science', grade: '8.8 CGPA' }],
+    projects: [{ title: 'AI Placement Portal', description: 'Built an AI-powered job portal', techStack: ['React', 'Node.js'] }],
+    github: 'https://github.com/rahul', linkedin: 'https://linkedin.com/in/rahul',
+    resumeUrl: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf'
+  },
+  {
+    _id: 'student_2', name: 'Priya Patel', email: 'priya@campus.edu', role: 'student',
+    cgpa: 9.1, branch: 'Information Technology', passingYear: 2026, phone: '+91 9998887776',
+    college: 'NIT Trichy', degree: 'B.Tech', headline: 'Data Science Intern | ML Engineer',
+    skills: ['Python', 'TensorFlow', 'SQL', 'Data Analysis'],
+    education: [{ institution: 'NIT Trichy', degree: 'B.Tech', field: 'Information Technology', grade: '9.1 CGPA' }],
+    projects: [{ title: 'Sales Predictor', description: 'ML model to predict e-commerce sales', techStack: ['Python', 'Pandas'] }],
+    github: 'https://github.com/priya', linkedin: 'https://linkedin.com/in/priya',
+    resumeUrl: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf'
+  },
+  {
+    _id: 'student_3', name: 'Amit Kumar', email: 'amit@campus.edu', role: 'student',
+    cgpa: 7.5, branch: 'Electronics', passingYear: 2026, phone: '+91 8887776665',
+    college: 'BITS Pilani', degree: 'B.E.', headline: 'IoT Developer | Hardware Hacker',
+    skills: ['C++', 'IoT', 'Embedded Systems', 'Arduino'],
+    education: [{ institution: 'BITS Pilani', degree: 'B.E.', field: 'Electronics', grade: '7.5 CGPA' }],
+    projects: [{ title: 'Smart Home Hub', description: 'IoT based automated home system', techStack: ['C++', 'Arduino'] }],
+    github: 'https://github.com/amit', linkedin: 'https://linkedin.com/in/amit',
+    resumeUrl: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf'
+  }
+];
 
 const findMockUser = (email) => mockUsers.find(u => u.email.toLowerCase() === email.toLowerCase());
 

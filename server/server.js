@@ -15,6 +15,45 @@ connectDB();
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
+
+// Custom viewer for DOCX files
+const fs = require('fs');
+app.get('/uploads/:filename', async (req, res, next) => {
+  const filename = req.params.filename.toLowerCase();
+  if (req.query.view === 'html' && (filename.endsWith('.docx') || filename.endsWith('.doc'))) {
+    const filePath = path.join(__dirname, 'uploads', req.params.filename);
+    if (fs.existsSync(filePath)) {
+      try {
+        const mammoth = require('mammoth');
+        const result = await mammoth.convertToHtml({ path: filePath });
+        const html = `
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <meta charset="utf-8">
+            <title>Resume Viewer</title>
+            <style>
+              body { font-family: 'Segoe UI', Arial, sans-serif; padding: 2rem; color: #333; line-height: 1.6; max-width: 800px; margin: 0 auto; background: #fff; }
+              h1, h2, h3 { color: #111827; margin-top: 1.5rem; margin-bottom: 0.75rem; }
+              p { margin-bottom: 0.75rem; }
+              ul, ol { margin-bottom: 1rem; padding-left: 1.5rem; }
+            </style>
+          </head>
+          <body>
+            ${result.value || '<p>No readable text found in document.</p>'}
+          </body>
+          </html>
+        `;
+        return res.send(html);
+      } catch (err) {
+        console.error('Mammoth conversion error:', err);
+        return res.status(500).send('Error rendering document preview.');
+      }
+    }
+  }
+  next();
+});
+
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Routes

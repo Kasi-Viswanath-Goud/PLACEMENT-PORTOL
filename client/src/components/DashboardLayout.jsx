@@ -2,9 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { Link, NavLink, useLocation, useNavigate, Outlet } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
-import { 
-  LayoutGrid, Search, User, FileText, Award, MessageSquare, 
-  Bell, Plus, Users, LogOut, Sun, Moon, Settings, Compass, ChevronRight, Clock, X
+import { motion } from 'framer-motion';
+import {
+  LayoutGrid, Search, User, FileText, Award, MessageSquare,
+  Bell, Plus, Users, LogOut, Sun, Moon, Settings, Compass, ChevronRight, Clock, X, Briefcase, TrendingUp
 } from 'lucide-react';
 
 export default function DashboardLayout() {
@@ -62,6 +63,7 @@ export default function DashboardLayout() {
     if (path === '/messages') return ['Home', 'Messages'];
     if (path === '/notifications') return ['Home', 'Notifications'];
     if (path === '/candidates') return ['Home', 'Candidate Search'];
+    if (path === '/company-analytics') return ['Home', 'Recruiter Analytics'];
     return ['Home', 'Dashboard Overview'];
   };
 
@@ -79,9 +81,10 @@ export default function DashboardLayout() {
 
   const companyLinks = [
     { to: '/company-dashboard', label: 'Dashboard', icon: <LayoutGrid size={18} /> },
+    { to: '/company-analytics', label: 'Analytics', icon: <TrendingUp size={18} /> },
+    { to: '/active-postings', label: 'Active Postings', icon: <Briefcase size={18} /> },
     { to: '/post-job', label: 'Post a Job', icon: <Plus size={18} /> },
     { to: '/candidates', label: 'Search Candidates', icon: <Users size={18} /> },
-    { to: '/jobs', label: 'View Jobs', icon: <Compass size={18} /> },
     { to: '/messages', label: 'Messages', icon: <MessageSquare size={18} /> },
     { to: '/notifications', label: 'Notifications', icon: <Bell size={18} />, badge: true },
   ];
@@ -89,75 +92,100 @@ export default function DashboardLayout() {
   const links = user?.role === 'company' ? companyLinks : studentLinks;
 
   return (
-    <div style={{ 
-      display: 'flex', 
-      minHeight: '100vh', 
-      background: 'var(--bg-primary)',
-      transition: 'background-color 0.3s ease'
+    <div style={{
+      display: 'flex',
+      minHeight: '100vh',
+      background: theme === 'dark' ? '#0b0914' : 'var(--bg-primary)',
     }}>
       {/* Sidebar Panel */}
-      <aside style={{
+      <aside className="astra-sidebar" style={{
         width: '260px',
-        background: 'var(--bg-secondary)',
-        borderRight: '1px solid var(--border-color)',
         display: 'flex',
         flexDirection: 'column',
         position: 'fixed',
-        top: 0,
-        bottom: 0,
-        left: 0,
-        zIndex: 50,
-        padding: '1.5rem 1rem'
+        top: '0',
+        bottom: '0',
+        left: '0',
+        padding: '2rem 1.5rem',
+        background: theme === 'dark' ? 'linear-gradient(180deg, #18153a 0%, #0d0a21 100%)' : 'var(--bg-secondary)',
+        borderRight: theme === 'dark' ? '1px solid rgba(255,255,255,0.03)' : '1px solid var(--border-color)',
+        zIndex: 50
       }}>
         {/* Brand/Logo Header */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '2.5rem', paddingLeft: '0.5rem' }}>
-          <img src="/alts_logo_v2.png" alt="ALTS Logo" style={{ 
-            height: '56px', 
-            objectFit: 'contain', 
-            filter: theme === 'dark' ? 'brightness(1.8) contrast(1.1)' : 'none',
-            transition: 'filter 0.3s ease',
-            marginRight: '0.25rem'
-          }} />
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '3rem', paddingLeft: '0.5rem' }}>
+          <div style={{ 
+            width: '40px', height: '40px', 
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            overflow: 'hidden'
+          }}>
+            <img src="/logo.png" alt="Logo" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+          </div>
           <div style={{ display: 'flex', flexDirection: 'column' }}>
-            <div style={{ fontFamily: 'var(--font-heading)', fontWeight: 800, fontSize: '1.5rem', color: '#B31B1B', letterSpacing: '-0.02em', lineHeight: 1 }}>
+            <div style={{ fontFamily: 'var(--font-heading)', fontWeight: 800, fontSize: '1.4rem', color: '#ef4444', letterSpacing: '0.02em', lineHeight: 1 }}>
               ALTS
             </div>
-            <div style={{ fontSize: '0.8rem', color: 'var(--text-primary)', letterSpacing: '0.05em', marginTop: '2px', fontWeight: 600, fontFamily: 'var(--font-heading)' }}>
+            <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', letterSpacing: '0.05em', marginTop: '2px', fontWeight: 500 }}>
               Placement Portal
             </div>
           </div>
         </div>
 
         {/* Sidebar Nav Links */}
-        <nav style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem', flex: 1 }}>
+        <nav style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', flex: 1 }}>
           {links.map((link) => (
-            <NavLink 
-              key={link.to} 
+            <NavLink
+              key={link.to}
               to={link.to}
-              style={({ isActive }) => ({
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.75rem',
-                padding: '0.75rem 1rem',
-                borderRadius: 'var(--radius-md)',
-                textDecoration: 'none',
-                fontWeight: 600,
-                fontSize: '0.9rem',
-                color: isActive ? '#fff' : 'var(--text-secondary)',
-                background: isActive ? 'var(--accent-gradient)' : 'transparent',
-                boxShadow: isActive ? 'var(--accent-glow)' : 'none',
-                transition: 'all 0.25s ease'
-              })}
+              style={{ textDecoration: 'none' }}
             >
-              {link.icon}
-              <span style={{ flex: 1 }}>{link.label}</span>
-              {link.badge && (
-                <span style={{ 
-                  width: '8px', 
-                  height: '8px', 
-                  background: 'var(--danger)', 
-                  borderRadius: '50%' 
-                }} />
+              {({ isActive }) => (
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '1rem',
+                  padding: '0.85rem 1.25rem',
+                  borderRadius: '12px',
+                  fontWeight: isActive ? 700 : 500,
+                  fontSize: '0.95rem',
+                  color: isActive ? (theme === 'dark' ? '#ffffff' : 'var(--text-primary)') : (theme === 'dark' ? 'rgba(255,255,255,0.5)' : 'var(--text-secondary)'),
+                  transition: 'color 0.2s ease',
+                  position: 'relative',
+                  zIndex: 1
+                }}>
+                  {isActive && (
+                    <motion.div
+                      layoutId="sidebar-active"
+                      style={{
+                        position: 'absolute',
+                        top: 0, bottom: 0, left: 0, right: 0,
+                        background: theme === 'dark' ? 'linear-gradient(90deg, rgba(107, 76, 255, 0.2) 0%, rgba(107, 76, 255, 0.05) 100%)' : 'rgba(107, 76, 255, 0.1)',
+                        borderLeft: '4px solid #6b4cff',
+                        borderRadius: '12px',
+                        zIndex: -1
+                      }}
+                      initial={false}
+                      transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                    />
+                  )}
+                  {React.cloneElement(link.icon, { 
+                    color: 'currentColor', 
+                    size: 20 
+                  })}
+                  <span style={{ flex: 1 }}>{link.label}</span>
+                  {link.badge && (
+                    <span style={{
+                      background: '#ef4444',
+                      color: '#fff',
+                      fontSize: '0.7rem',
+                      fontWeight: 800,
+                      padding: '2px 6px',
+                      borderRadius: '10px',
+                      marginLeft: 'auto'
+                    }}>
+                      3
+                    </span>
+                  )}
+                </div>
               )}
             </NavLink>
           ))}
@@ -165,10 +193,10 @@ export default function DashboardLayout() {
 
         {/* Bottom User Account Card */}
         {user && (
-          <div style={{ 
-            background: 'var(--bg-card)', 
-            border: '1px solid var(--border-color)', 
-            padding: '0.85rem', 
+          <div style={{
+            background: 'var(--bg-card)',
+            border: '1px solid var(--border-color)',
+            padding: '0.85rem',
             borderRadius: 'var(--radius-lg)',
             marginTop: 'auto',
             display: 'flex',
@@ -176,26 +204,26 @@ export default function DashboardLayout() {
             gap: '0.75rem'
           }}>
             {/* Avatar */}
-            <div style={{ 
-              width: '40px', 
-              height: '40px', 
-              borderRadius: '50%', 
-              background: 'var(--accent-primary)', 
-              display: 'flex', 
-              alignItems: 'center', 
-              justifyContent: 'center', 
-              color: '#fff', 
+            <div style={{
+              width: '40px',
+              height: '40px',
+              borderRadius: '50%',
+              background: 'var(--accent-primary)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: '#fff',
               fontWeight: 600,
               flexShrink: 0
             }}>
               {user.name ? user.name.charAt(0).toUpperCase() : <User size={18} />}
             </div>
-            
+
             {/* Info details */}
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ 
-                fontWeight: 700, 
-                fontSize: '0.85rem', 
+              <div style={{
+                fontWeight: 700,
+                fontSize: '0.85rem',
                 color: 'var(--text-primary)',
                 whiteSpace: 'nowrap',
                 overflow: 'hidden',
@@ -203,8 +231,8 @@ export default function DashboardLayout() {
               }}>
                 {user.name}
               </div>
-              <div style={{ 
-                fontSize: '0.7rem', 
+              <div style={{
+                fontSize: '0.7rem',
                 color: 'var(--text-secondary)',
                 textTransform: 'capitalize'
               }}>
@@ -213,7 +241,7 @@ export default function DashboardLayout() {
             </div>
 
             {/* Logout button */}
-            <button 
+            <button
               onClick={() => {
                 logout();
                 navigate('/login');
@@ -240,108 +268,86 @@ export default function DashboardLayout() {
       </aside>
 
       {/* Main Right Content Wrap */}
-      <div style={{ 
-        flex: 1, 
-        marginLeft: '260px', 
-        display: 'flex', 
+      <div style={{
+        flex: 1,
+        marginLeft: '260px',
+        display: 'flex',
         flexDirection: 'column',
         minWidth: 0
       }}>
-        
+
         {/* Top Header bar */}
         <header style={{
-          height: '70px',
-          background: 'var(--bg-secondary)',
-          borderBottom: '1px solid var(--border-color)',
+          height: '90px',
+          background: 'transparent',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          padding: '0 2rem',
+          padding: '1.5rem 2.5rem',
           position: 'sticky',
           top: 0,
           zIndex: 40
         }}>
-          {/* Breadcrumbs Left */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.85rem', fontWeight: 500 }}>
-            {breadcrumbs.map((crumb, idx) => (
-              <React.Fragment key={idx}>
-                {idx > 0 && <ChevronRight size={14} color="var(--text-muted)" />}
-                <span style={{ color: idx === breadcrumbs.length - 1 ? 'var(--text-primary)' : 'var(--text-secondary)' }}>
-                  {crumb}
-                </span>
-              </React.Fragment>
-            ))}
-          </div>
-
-          {/* Search bar Center */}
-          <div style={{ 
-            display: 'flex', 
-            alignItems: 'center', 
-            background: 'var(--bg-primary)', 
-            padding: '0.4rem 1rem', 
-            borderRadius: '9999px', 
-            border: '1px solid var(--border-color)',
-            width: '100%',
-            maxWidth: '320px',
-            gap: '0.5rem'
-          }}>
-            <Search size={16} color="var(--text-muted)" />
-            <input 
-              type="text" 
-              placeholder="Search jobs, classes, tools..." 
-              style={{ 
-                background: 'transparent', 
-                border: 'none', 
-                color: 'var(--text-primary)', 
-                fontSize: '0.85rem', 
-                outline: 'none',
-                width: '100%'
-              }}
-            />
-          </div>
-
-          {/* User Tools Right */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          {/* Welcome User Left - Empty so search is right aligned */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flex: 1 }}>
             
-            {/* Notification trigger with animation */}
-            <div style={{ position: 'relative' }}>
-              <div 
-                onClick={() => {
-                  setShowDropdown(!showDropdown);
-                  if (hasNewAlert) setHasNewAlert(false);
-                }}
-                className={hasNewAlert ? 'animate-bell' : ''}
-                style={{ 
-                  background: 'var(--bg-primary)',
-                  border: '1px solid var(--border-color)',
-                  padding: '0.45rem', 
-                  borderRadius: '50%',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  position: 'relative',
-                  color: 'var(--text-primary)',
-                  cursor: 'pointer'
-                }}
-                title="Notifications"
-              >
-                <Bell size={16} />
+          </div>
+
+          {/* User Tools Right & Search */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+            
+            {/* Search Bar */}
+            <div style={{ 
+              display: 'flex', alignItems: 'center', background: theme === 'dark' ? 'rgba(255,255,255,0.03)' : '#fff', 
+              border: theme === 'dark' ? '1px solid rgba(255,255,255,0.05)' : '1px solid rgba(0,0,0,0.1)', borderRadius: '24px', 
+              padding: '0.5rem 1.25rem', width: '300px', marginRight: '0.5rem'
+            }}>
+              <Search size={16} color={theme === 'dark' ? "rgba(255,255,255,0.4)" : "#64748b"} style={{ marginRight: '0.5rem' }} />
+              <input type="text" placeholder="Search anything..." style={{
+                background: 'transparent', border: 'none', color: theme === 'dark' ? '#fff' : '#0f172a', fontSize: '0.9rem',
+                outline: 'none', width: '100%'
+              }} />
+            </div>
+
+
+              {/* Notification trigger with animation */}
+              <div style={{ position: 'relative' }}>
+                <div
+                  onClick={() => {
+                    setShowDropdown(!showDropdown);
+                    if (hasNewAlert) setHasNewAlert(false);
+                  }}
+                  className={`astra-pill ${hasNewAlert ? 'animate-bell' : ''}`}
+                  style={{
+                    width: '38px',
+                    height: '38px',
+                    padding: 0,
+                    cursor: 'pointer',
+                    position: 'relative',
+                    background: theme === 'dark' ? 'rgba(255,255,255,0.03)' : '#fff',
+                    border: theme === 'dark' ? '1px solid rgba(255,255,255,0.05)' : '1px solid rgba(0,0,0,0.1)',
+                    borderRadius: '50%',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center'
+                  }}
+                  title="Notifications"
+                >
+                  <Bell size={18} color={theme === 'dark' ? '#fff' : '#0f172a'} />
                 {(hasNewAlert || showDropdown) && (
-                  <span style={{ 
-                    position: 'absolute', 
-                    top: '-2px', 
-                    right: '-2px', 
-                    width: '8px', 
-                    height: '8px', 
-                    background: 'var(--danger)', 
-                    borderRadius: '50%' 
+                  <span style={{
+                    position: 'absolute',
+                    top: '-2px',
+                    right: '-2px',
+                    width: '8px',
+                    height: '8px',
+                    background: 'var(--danger)',
+                    borderRadius: '50%'
                   }} />
                 )}
               </div>
 
               {/* Unfolding Notification Card */}
               {showDropdown && latestJob && (
-                <div 
+                <div
                   className="animate-unfold"
                   style={{
                     position: 'absolute',
@@ -360,12 +366,12 @@ export default function DashboardLayout() {
                     <h4 style={{ margin: 0, fontWeight: '700', fontSize: '1rem', color: 'var(--text-primary)' }}>
                       New job posted
                     </h4>
-                    <button 
+                    <button
                       onClick={handleDismissPopup}
-                      style={{ 
-                        background: 'none', 
-                        border: 'none', 
-                        color: 'var(--text-muted)', 
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        color: 'var(--text-muted)',
                         cursor: 'pointer',
                         padding: '0',
                         display: 'flex',
@@ -380,23 +386,23 @@ export default function DashboardLayout() {
                     {latestJob.companyName} — {latestJob.title}.
                   </p>
                   <div style={{ display: 'flex', gap: '0.5rem' }}>
-                    <span style={{ 
-                      background: 'rgba(16, 185, 129, 0.1)', 
-                      color: '#10B981', 
-                      padding: '0.2rem 0.6rem', 
-                      borderRadius: '12px', 
-                      fontSize: '0.8rem', 
-                      fontWeight: '500' 
+                    <span style={{
+                      background: 'rgba(16, 185, 129, 0.1)',
+                      color: '#10B981',
+                      padding: '0.2rem 0.6rem',
+                      borderRadius: '12px',
+                      fontSize: '0.8rem',
+                      fontWeight: '500'
                     }}>
                       {latestJob.packageCTC} LPA
                     </span>
-                    <span style={{ 
-                      background: 'rgba(59, 130, 246, 0.1)', 
-                      color: '#3B82F6', 
-                      padding: '0.2rem 0.6rem', 
-                      borderRadius: '12px', 
-                      fontSize: '0.8rem', 
-                      fontWeight: '500' 
+                    <span style={{
+                      background: 'rgba(59, 130, 246, 0.1)',
+                      color: '#3B82F6',
+                      padding: '0.2rem 0.6rem',
+                      borderRadius: '12px',
+                      fontSize: '0.8rem',
+                      fontWeight: '500'
                     }}>
                       CGPA {latestJob.minCGPA}+
                     </span>
@@ -411,41 +417,34 @@ export default function DashboardLayout() {
             </div>
 
             {/* Messages trigger */}
-            <Link 
-              to="/messages" 
-              style={{ 
-                background: 'var(--bg-primary)',
-                border: '1px solid var(--border-color)',
-                padding: '0.45rem', 
-                borderRadius: '50%',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: 'var(--text-primary)'
+            <Link
+              to="/messages"
+              style={{
+                width: '38px', height: '38px',
+                background: theme === 'dark' ? 'rgba(255,255,255,0.03)' : '#fff', border: theme === 'dark' ? '1px solid rgba(255,255,255,0.05)' : '1px solid rgba(0,0,0,0.1)',
+                borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                textDecoration: 'none', color: theme === 'dark' ? '#fff' : '#0f172a'
               }}
               title="Messages"
             >
-              <MessageSquare size={16} />
+              <MessageSquare size={18} />
             </Link>
 
             {/* Theme trigger */}
-            <button 
+            <button
               onClick={toggleTheme}
-              style={{ 
-                background: 'var(--bg-primary)',
-                border: '1px solid var(--border-color)',
-                padding: '0.45rem', 
-                borderRadius: '50%',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                cursor: 'pointer',
-                color: 'var(--text-primary)'
+              style={{
+                width: '38px', height: '38px',
+                background: theme === 'dark' ? 'rgba(255,255,255,0.03)' : '#fff', border: theme === 'dark' ? '1px solid rgba(255,255,255,0.05)' : '1px solid rgba(0,0,0,0.1)',
+                borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                cursor: 'pointer', border: 'none', color: theme === 'dark' ? '#fff' : '#0f172a'
               }}
               title="Toggle Theme"
             >
-              {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
+              {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
             </button>
+
+
           </div>
         </header>
 

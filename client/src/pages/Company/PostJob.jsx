@@ -8,6 +8,7 @@ export const PostJob = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState({ type: '', text: '' });
+  const [fieldErrors, setFieldErrors] = useState({});
 
   const [formData, setFormData] = useState({
     title: '', description: '', roleCategory: 'Software Engineering',
@@ -20,12 +21,52 @@ export const PostJob = () => {
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+    // Clear field error on change
+    if (fieldErrors[e.target.name]) {
+      setFieldErrors(prev => { const next = { ...prev }; delete next[e.target.name]; return next; });
+    }
+  };
+
+  const validateForm = () => {
+    const errors = {};
+    const requiredFields = {
+      title: 'Job Title',
+      description: 'Job Description',
+      location: 'Location',
+      packageCTC: 'Package (CTC)',
+      requiredSkills: 'Required Skills',
+      deadline: 'Application Deadline'
+    };
+    for (const [field, label] of Object.entries(requiredFields)) {
+      if (!formData[field] || !formData[field].toString().trim()) {
+        errors[field] = `${label} is required`;
+      }
+    }
+    return errors;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // Client-side validation
+    const errors = validateForm();
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
+      setMessage({ type: 'error', text: 'Please fill in all required fields.' });
+      // Scroll to first error
+      const firstErrorField = document.querySelector(`[name="${Object.keys(errors)[0]}"]`);
+      if (firstErrorField) firstErrorField.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return;
+    }
+
+    if (!token) {
+      setMessage({ type: 'error', text: 'You are not logged in. Please log in again.' });
+      return;
+    }
+
     setLoading(true);
     setMessage({ type: '', text: '' });
+    setFieldErrors({});
 
     try {
       const res = await fetch('/api/jobs', {
@@ -36,14 +77,21 @@ export const PostJob = () => {
         },
         body: JSON.stringify(formData)
       });
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.message || `Server error (${res.status})`);
+      }
+
       const data = await res.json();
-      
-      if (!res.ok) throw new Error(data.message);
-      
       setMessage({ type: 'success', text: 'Job posted successfully!' });
       setTimeout(() => navigate('/company-dashboard'), 1500);
     } catch (err) {
-      setMessage({ type: 'error', text: err.message || 'Failed to post job.' });
+      if (err.name === 'TypeError' && err.message === 'Failed to fetch') {
+        setMessage({ type: 'error', text: 'Cannot connect to server. Please make sure the backend is running.' });
+      } else {
+        setMessage({ type: 'error', text: err.message || 'Failed to post job.' });
+      }
     } finally {
       setLoading(false);
     }
@@ -64,19 +112,21 @@ export const PostJob = () => {
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="glass-panel" style={{ padding: '2.5rem' }}>
+      <form onSubmit={handleSubmit} noValidate className="glass-panel" style={{ padding: '2.5rem' }}>
         
         <h3 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '1.5rem', paddingBottom: '0.5rem', borderBottom: '1px solid var(--border-color)' }}>Basic Details</h3>
         
         <div className="grid-2">
           <div className="form-group" style={{ gridColumn: 'span 2' }}>
             <label className="form-label">Job Title / Role</label>
-            <input type="text" name="title" className="form-input" placeholder="e.g. Software Development Engineer" value={formData.title} onChange={handleChange} required />
+            <input type="text" name="title" className="form-input" placeholder="e.g. Software Development Engineer" value={formData.title} onChange={handleChange} style={fieldErrors.title ? { borderColor: 'var(--danger)', boxShadow: '0 0 0 2px rgba(239,68,68,0.15)' } : {}} />
+            {fieldErrors.title && <span style={{ color: 'var(--danger)', fontSize: '0.8rem', marginTop: '0.25rem' }}>{fieldErrors.title}</span>}
           </div>
           
           <div className="form-group" style={{ gridColumn: 'span 2' }}>
             <label className="form-label">Job Description</label>
-            <textarea name="description" className="form-textarea" rows="5" placeholder="Detailed description of responsibilities and expectations..." value={formData.description} onChange={handleChange} required></textarea>
+            <textarea name="description" className="form-textarea" rows="5" placeholder="Detailed description of responsibilities and expectations..." value={formData.description} onChange={handleChange} style={fieldErrors.description ? { borderColor: 'var(--danger)', boxShadow: '0 0 0 2px rgba(239,68,68,0.15)' } : {}}></textarea>
+            {fieldErrors.description && <span style={{ color: 'var(--danger)', fontSize: '0.8rem', marginTop: '0.25rem' }}>{fieldErrors.description}</span>}
           </div>
 
           <div className="form-group">
@@ -93,7 +143,8 @@ export const PostJob = () => {
 
           <div className="form-group">
             <label className="form-label">Location</label>
-            <input type="text" name="location" className="form-input" placeholder="e.g. Bangalore, India" value={formData.location} onChange={handleChange} required />
+            <input type="text" name="location" className="form-input" placeholder="e.g. Bangalore, India" value={formData.location} onChange={handleChange} style={fieldErrors.location ? { borderColor: 'var(--danger)', boxShadow: '0 0 0 2px rgba(239,68,68,0.15)' } : {}} />
+            {fieldErrors.location && <span style={{ color: 'var(--danger)', fontSize: '0.8rem', marginTop: '0.25rem' }}>{fieldErrors.location}</span>}
           </div>
 
           <div className="form-group">
@@ -120,37 +171,48 @@ export const PostJob = () => {
         <div className="grid-2">
           <div className="form-group">
             <label className="form-label">Package (CTC in LPA)</label>
-            <input type="number" step="0.1" name="packageCTC" className="form-input" placeholder="e.g. 15.5" value={formData.packageCTC} onChange={handleChange} required />
+            <input type="number" step="0.1" name="packageCTC" className="form-input" placeholder="e.g. 15.5" value={formData.packageCTC} onChange={handleChange} style={fieldErrors.packageCTC ? { borderColor: 'var(--danger)', boxShadow: '0 0 0 2px rgba(239,68,68,0.15)' } : {}} />
+            {fieldErrors.packageCTC && <span style={{ color: 'var(--danger)', fontSize: '0.8rem', marginTop: '0.25rem' }}>{fieldErrors.packageCTC}</span>}
           </div>
 
           <div className="form-group">
             <label className="form-label">Minimum CGPA</label>
-            <input type="number" step="0.1" max="10" name="minCGPA" className="form-input" placeholder="e.g. 7.5" value={formData.minCGPA} onChange={handleChange} required />
+            <input type="number" step="0.1" max="10" name="minCGPA" className="form-input" placeholder="e.g. 7.5" value={formData.minCGPA} onChange={handleChange} />
           </div>
 
           <div className="form-group" style={{ gridColumn: 'span 2' }}>
             <label className="form-label">Allowed Branches (Comma separated)</label>
-            <input type="text" name="allowedBranches" className="form-input" placeholder="e.g. Computer Science, Information Technology" value={formData.allowedBranches} onChange={handleChange} required />
+            <input type="text" name="allowedBranches" className="form-input" placeholder="e.g. Computer Science, Information Technology" value={formData.allowedBranches} onChange={handleChange} />
           </div>
 
           <div className="form-group" style={{ gridColumn: 'span 2' }}>
             <label className="form-label">Required Skills (Comma separated)</label>
-            <input type="text" name="requiredSkills" className="form-input" placeholder="e.g. React, Node.js, Python, SQL" value={formData.requiredSkills} onChange={handleChange} required />
+            <input type="text" name="requiredSkills" className="form-input" placeholder="e.g. React, Node.js, Python, SQL" value={formData.requiredSkills} onChange={handleChange} style={fieldErrors.requiredSkills ? { borderColor: 'var(--danger)', boxShadow: '0 0 0 2px rgba(239,68,68,0.15)' } : {}} />
+            {fieldErrors.requiredSkills && <span style={{ color: 'var(--danger)', fontSize: '0.8rem', marginTop: '0.25rem' }}>{fieldErrors.requiredSkills}</span>}
           </div>
 
           <div className="form-group">
             <label className="form-label">Target Passing Year</label>
-            <input type="number" name="passingYear" className="form-input" placeholder="e.g. 2026" value={formData.passingYear} onChange={handleChange} required />
+            <input type="number" name="passingYear" className="form-input" placeholder="e.g. 2026" value={formData.passingYear} onChange={handleChange} />
           </div>
 
           <div className="form-group">
             <label className="form-label">Number of Vacancies</label>
-            <input type="number" name="vacancies" className="form-input" value={formData.vacancies} onChange={handleChange} required />
+            <input type="number" name="vacancies" className="form-input" value={formData.vacancies} onChange={handleChange} />
           </div>
 
           <div className="form-group" style={{ gridColumn: 'span 2' }}>
             <label className="form-label">Application Deadline</label>
-            <input type="date" name="deadline" className="form-input" value={formData.deadline} onChange={handleChange} required />
+            <input 
+              type="date" 
+              name="deadline" 
+              className="form-input" 
+              value={formData.deadline} 
+              onChange={handleChange} 
+              onClick={(e) => { try { e.target.showPicker(); } catch (err) {} }}
+              style={fieldErrors.deadline ? { borderColor: 'var(--danger)', boxShadow: '0 0 0 2px rgba(239,68,68,0.15)' } : {}} 
+            />
+            {fieldErrors.deadline && <span style={{ color: 'var(--danger)', fontSize: '0.8rem', marginTop: '0.25rem' }}>{fieldErrors.deadline}</span>}
           </div>
         </div>
 

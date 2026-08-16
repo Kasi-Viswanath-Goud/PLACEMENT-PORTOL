@@ -14,8 +14,10 @@ import ResumeBuilder from './pages/Student/ResumeBuilder';
 import History from './pages/Student/History';
 
 import CompanyDashboard from './pages/Company/Dashboard';
+import CompanyAnalytics from './pages/Company/CompanyAnalytics';
 import PostJob from './pages/Company/PostJob';
 import ApplicantsList from './pages/Company/ApplicantsList';
+import ActivePostings from './pages/Company/ActivePostings';
 
 import JobsPage from './pages/Jobs/JobsPage';
 import JobDetails from './pages/Jobs/JobDetails';
@@ -23,6 +25,13 @@ import JobDetails from './pages/Jobs/JobDetails';
 import Messages from './pages/Messages/Messages';
 import Notifications from './pages/Notifications/Notifications';
 import { useAuth } from './context/AuthContext';
+
+import AboutPage from './pages/Static/AboutPage';
+import ContactPage from './pages/Static/ContactPage';
+import PrivacyPage from './pages/Static/PrivacyPage';
+import TermsPage from './pages/Static/TermsPage';
+import PricingPage from './pages/Static/PricingPage';
+import CompaniesPage from './pages/Static/CompaniesPage';
 
 const NotFound = () => (
   <div className="container" style={{ textAlign: 'center', padding: '10rem 2rem' }}>
@@ -42,7 +51,11 @@ const PublicLayout = () => (
 );
 
 export default function App() {
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
+
+  if (loading) {
+    return <div className="flex-center" style={{ height: '100vh' }}><div className="spinner"></div></div>;
+  }
 
   return (
     <Routes>
@@ -57,6 +70,14 @@ export default function App() {
           {/* Jobs viewed in Dashboard layout for logged in users */}
           <Route path="/jobs" element={<JobsPage />} />
           <Route path="/jobs/:id" element={<JobDetails />} />
+          
+          {/* Static Pages */}
+          <Route path="/about" element={<AboutPage />} />
+          <Route path="/contact" element={<ContactPage />} />
+          <Route path="/privacy" element={<PrivacyPage />} />
+          <Route path="/terms" element={<TermsPage />} />
+          <Route path="/pricing" element={<PricingPage />} />
+          <Route path="/companies" element={<CompaniesPage />} />
           
           {/* Protected routes */}
           <Route element={<ProtectedRoute />}>
@@ -75,6 +96,8 @@ export default function App() {
           {/* Recruiter Specific */}
           <Route element={<ProtectedRoute allowedRoles={['company']} />}>
             <Route path="/company-dashboard" element={<CompanyDashboard />} />
+            <Route path="/company-analytics" element={<CompanyAnalytics />} />
+            <Route path="/active-postings" element={<ActivePostings />} />
             <Route path="/post-job" element={<PostJob />} />
             <Route path="/jobs/:id/applicants" element={<ApplicantsList />} />
             <Route path="/candidates" element={<div className="container">Candidate Search</div>} />
@@ -91,6 +114,14 @@ export default function App() {
           <Route path="/jobs" element={<JobsPage />} />
           <Route path="/jobs/:id" element={<JobDetails />} />
           
+          {/* Static Pages */}
+          <Route path="/about" element={<AboutPage />} />
+          <Route path="/contact" element={<ContactPage />} />
+          <Route path="/privacy" element={<PrivacyPage />} />
+          <Route path="/terms" element={<TermsPage />} />
+          <Route path="/pricing" element={<PricingPage />} />
+          <Route path="/companies" element={<CompaniesPage />} />
+          
           {/* Fallback redirect to login for guests trying to access app pages */}
           <Route path="/student-dashboard" element={<Navigate to="/login" replace />} />
           <Route path="/history" element={<Navigate to="/login" replace />} />
@@ -99,6 +130,10 @@ export default function App() {
           <Route path="/resume-builder" element={<Navigate to="/login" replace />} />
           <Route path="/messages" element={<Navigate to="/login" replace />} />
           <Route path="/notifications" element={<Navigate to="/login" replace />} />
+          <Route path="/post-job" element={<Navigate to="/login" replace />} />
+          <Route path="/active-postings" element={<Navigate to="/login" replace />} />
+          <Route path="/jobs/:id/applicants" element={<Navigate to="/login" replace />} />
+          <Route path="/candidates" element={<Navigate to="/login" replace />} />
         </Route>
       )}
 

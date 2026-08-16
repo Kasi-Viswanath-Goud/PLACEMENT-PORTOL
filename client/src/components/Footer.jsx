@@ -14,10 +14,10 @@ export const Footer = () => {
           
           <div style={{ gridColumn: 'span 2' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
-              <div style={{ color: 'var(--accent-primary)' }}>
-                <GraduationCap size={28} />
+              <div style={{ width: '28px', height: '28px' }}>
+                <img src="/logo.png" alt="ALTS Logo" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
               </div>
-              <div style={{ fontFamily: 'var(--font-heading)', fontWeight: 800, fontSize: '1.5rem', color: '#B31B1B' }}>
+              <div style={{ fontFamily: 'var(--font-heading)', fontWeight: 800, fontSize: '1.5rem', color: '#ef4444' }}>
                 ALTS
               </div>
             </div>

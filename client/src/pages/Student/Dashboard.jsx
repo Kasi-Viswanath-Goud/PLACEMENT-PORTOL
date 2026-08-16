@@ -2,22 +2,23 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { 
-  Briefcase, FileText, CheckCircle2, Clock, MapPin, Award, 
-  TrendingUp, Zap, Building2, Calendar, Star, User, Sparkles, ChevronRight, X
+  Briefcase, Calendar, CheckCircle, Eye, Download, MoreHorizontal, ArrowRight, UserCheck
 } from 'lucide-react';
+import { PieChart, Pie, Cell, ResponsiveContainer, LineChart, Line } from 'recharts';
+
+// Dummy sparkline data
+const dataPurple = [{v: 10}, {v: 12}, {v: 11}, {v: 15}, {v: 14}, {v: 18}, {v: 22}];
+const dataBlue = [{v: 5}, {v: 6}, {v: 6}, {v: 8}, {v: 7}, {v: 9}, {v: 12}];
+const dataGreen = [{v: 1}, {v: 1}, {v: 2}, {v: 2}, {v: 3}, {v: 3}, {v: 4}];
+const dataOrange = [{v: 30}, {v: 32}, {v: 35}, {v: 40}, {v: 38}, {v: 45}, {v: 48}];
 
 export default function Dashboard() {
   const { user, token } = useAuth();
   const [applications, setApplications] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [recommendedCount, setRecommendedCount] = useState(0);
-  const [recommendedJobs, setRecommendedJobs] = useState([]);
-  const [showPopup, setShowPopup] = useState(true);
-  const [latestJob, setLatestJob] = useState(null);
 
   useEffect(() => {
     fetchApplications();
-    fetchRecommendedJobs();
   }, [token]);
 
   const fetchApplications = async () => {
@@ -36,307 +37,292 @@ export default function Dashboard() {
     }
   };
 
-  const fetchRecommendedJobs = async () => {
-    try {
-      const res = await fetch('/api/jobs');
-      if (res.ok) {
-        const data = await res.json();
-        if (data && data.length > 0) {
-          setLatestJob(data[0]); // newest job is at index 0
-        }
-        // Match jobs based on student skills
-        const studentSkills = user?.skills || [];
-        const matchedJobs = data.map(job => {
-          const required = job.requiredSkills || [];
-          const matchCount = required.filter(skill => 
-            studentSkills.some(s => s.toLowerCase().trim() === skill.toLowerCase().trim())
-          ).length;
-          const matchPercentage = required.length > 0 ? Math.round((matchCount / required.length) * 100) : 0;
-          return { ...job, matchPercentage };
-        }).sort((a, b) => b.matchPercentage - a.matchPercentage);
+  const activeAppsCount = applications.filter(a => !['Rejected', 'Offer Declined'].includes(a.status)).length;
+  const interviews = applications.filter(a => a.status === 'Interview Scheduled');
+  const offers = applications.filter(a => a.status === 'Selected').length;
 
-        const validMatches = matchedJobs.filter(j => j.matchPercentage > 0);
-        setRecommendedJobs(validMatches.length > 0 ? validMatches.slice(0, 2) : matchedJobs.slice(0, 2));
-        setRecommendedCount(validMatches.length > 0 ? validMatches.length : 6); // Fallback to 6 if no matches
-      }
-    } catch (err) {
-      console.error(err);
-      setRecommendedCount(6);
-    }
+  // Pie chart data
+  const appliedCount = applications.filter(a => a.status === 'Applied').length;
+  const shortlistedCount = applications.filter(a => a.status === 'Shortlisted').length;
+  const interviewCount = interviews.length;
+  const offeredCount = offers;
+  
+  const totalApps = applications.length || 1;
+  const pieData = [
+    { name: 'Applied', value: appliedCount, color: '#3b82f6' }, // blue
+    { name: 'Shortlisted', value: shortlistedCount, color: '#a855f7' }, // purple
+    { name: 'Interview', value: interviewCount, color: '#f59e0b' }, // orange
+    { name: 'Offered', value: offeredCount, color: '#10b981' }, // green
+  ].filter(d => d.value > 0);
+
+  // If no data, show a dummy ring
+  const displayPieData = pieData.length > 0 ? pieData : [{ name: 'None', value: 1, color: '#2d334a' }];
+
+  const cardStyle = {
+    background: 'var(--bg-card)',
+    borderRadius: '16px',
+    border: '1px solid var(--border-color)',
+    padding: '1.5rem',
+    display: 'flex',
+    flexDirection: 'column'
   };
-
-  const getStatusColor = (status) => {
-    switch (status) {
-      case 'Applied': return 'var(--info)';
-      case 'Shortlisted': return 'var(--accent-primary)';
-      case 'Interview Scheduled': return 'var(--warning)';
-      case 'Selected': case 'Offer Accepted': return 'var(--success)';
-      case 'Rejected': case 'Offer Declined': return 'var(--danger)';
-      default: return 'var(--text-muted)';
-    }
-  };
-
-  const interviewCount = applications.filter(a => a.status === 'Interview Scheduled').length;
-  const resumeScore = user?.resumeScore || 75;
 
   return (
-    <div className="animate-fade-in" style={{ padding: '2rem', position: 'relative' }}>
+    <div className="animate-fade-in" style={{ padding: '0 2.5rem 2.5rem 2.5rem' }}>
       
-      {/* Welcome Banner removed as per request (replaced by bell notifications) */}
-
-      {/* 2. Stats & Metric Grid */}
-      <div className="grid-4" style={{ marginBottom: '2rem' }}>
-        
-        {/* Metric 1 - Jobs Applied → History */}
-        <Link to="/history" className="glass-card" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', padding: '1.25rem', textDecoration: 'none', cursor: 'pointer', transition: 'transform 0.2s, box-shadow 0.2s' }}
-          onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.boxShadow = '0 8px 25px rgba(99,102,241,0.15)'; }}
-          onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = ''; }}
-        >
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
-            <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: 'rgba(99, 102, 241, 0.12)', color: 'var(--accent-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <Briefcase size={20} style={{ alignSelf: 'center' }} />
-            </div>
-            <span className="badge badge-success" style={{ fontSize: '0.65rem' }}>+{applications.filter(a => a.status === 'Applied').length} Active</span>
-          </div>
-          <div>
-            <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', letterSpacing: '0.05em', textTransform: 'uppercase' }}>
-              Jobs Applied
-            </div>
-            <div style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--text-primary)', marginTop: '0.2rem', display: 'flex', alignItems: 'baseline', gap: '0.5rem' }}>
-              {applications.length.toString().padStart(2, '0')}
-              <span style={{ fontSize: '0.85rem', color: 'var(--success)', fontWeight: 600 }}>↑ {applications.length > 0 ? Math.round((applications.length / 10) * 100) : 0}%</span>
-            </div>
-          </div>
-        </Link>
-
-        {/* Metric 2 - Resume Score → Resume Builder */}
-        <Link to="/resume-builder" className="glass-card" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', padding: '1.25rem', textDecoration: 'none', cursor: 'pointer', transition: 'transform 0.2s, box-shadow 0.2s' }}
-          onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.boxShadow = '0 8px 25px rgba(239,68,68,0.15)'; }}
-          onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = ''; }}
-        >
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
-            <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: 'rgba(239, 68, 68, 0.12)', color: 'var(--danger)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <FileText size={20} style={{ alignSelf: 'center' }} />
-            </div>
-            <span className="badge" style={{ background: resumeScore >= 80 ? 'var(--success-bg)' : 'var(--warning-bg)', color: resumeScore >= 80 ? 'var(--success)' : 'var(--warning)', fontSize: '0.65rem' }}>
-              {resumeScore >= 80 ? 'OPTIMIZED' : 'NEEDS WORK'}
-            </span>
-          </div>
-          <div>
-            <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', letterSpacing: '0.05em', textTransform: 'uppercase' }}>
-              Resume Score (ATS)
-            </div>
-            <div style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--text-primary)', marginTop: '0.2rem', display: 'flex', alignItems: 'baseline', gap: '0.5rem' }}>
-              {resumeScore}
-              <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 500 }}>/100</span>
-            </div>
-          </div>
-        </Link>
-
-        {/* Metric 3 - Scheduled Interviews → History (filtered) */}
-        <Link to="/history" className="glass-card" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', padding: '1.25rem', textDecoration: 'none', cursor: 'pointer', transition: 'transform 0.2s, box-shadow 0.2s' }}
-          onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.boxShadow = '0 8px 25px rgba(245,158,11,0.15)'; }}
-          onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = ''; }}
-        >
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
-            <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: 'rgba(245, 158, 11, 0.12)', color: 'var(--warning)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <Calendar size={20} style={{ alignSelf: 'center' }} />
-            </div>
-            <span className="badge badge-warning" style={{ fontSize: '0.65rem' }}>{interviewCount > 0 ? 'HIGH PRIORITY' : 'ALL CLEAR'}</span>
-          </div>
-          <div>
-            <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', letterSpacing: '0.05em', textTransform: 'uppercase' }}>
-              Scheduled Interviews
-            </div>
-            <div style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--text-primary)', marginTop: '0.2rem' }}>
-              {interviewCount.toString().padStart(2, '0')}
-            </div>
-          </div>
-        </Link>
-
-        {/* Metric 4 - Recommended Placements → Jobs */}
-        <Link to="/jobs" className="glass-card" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', padding: '1.25rem', textDecoration: 'none', cursor: 'pointer', transition: 'transform 0.2s, box-shadow 0.2s' }}
-          onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.boxShadow = '0 8px 25px rgba(16,185,129,0.15)'; }}
-          onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = ''; }}
-        >
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
-            <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: 'rgba(16, 185, 129, 0.12)', color: 'var(--success)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <TrendingUp size={20} style={{ alignSelf: 'center' }} />
-            </div>
-            <span className="badge badge-primary" style={{ fontSize: '0.65rem' }}>Match score {user?.cgpa ? 'Good' : 'Medium'}</span>
-          </div>
-          <div>
-            <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', letterSpacing: '0.05em', textTransform: 'uppercase' }}>
-              Recommended Placements
-            </div>
-            <div style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--text-primary)', marginTop: '0.2rem' }}>
-              {recommendedCount.toString().padStart(2, '0')}
-            </div>
-          </div>
-        </Link>
-
-      </div>
-
-      {/* 3. Quick Actions row */}
-      <div style={{ marginBottom: '2.5rem' }}>
-        <h3 style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '1rem' }}>
-          Quick Actions
-        </h3>
-        <div className="grid-3">
-          
-          <Link to="/resume-builder" className="glass-card" style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '1.25rem', textDecoration: 'none', transition: 'all 0.2s' }}>
-            <div style={{ width: '44px', height: '44px', borderRadius: '10px', background: 'var(--bg-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--accent-primary)' }}>
-              <Sparkles size={20} />
-            </div>
-            <div>
-              <h4 style={{ fontWeight: 700, fontSize: '0.95rem', color: 'var(--text-primary)' }}>Generate AI Resume</h4>
-              <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.1rem' }}>Optimize structure, layout and content</p>
-            </div>
-          </Link>
-
-
-
-          <Link to="/jobs" className="glass-card" style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '1.25rem', textDecoration: 'none', transition: 'all 0.2s' }}>
-            <div style={{ width: '44px', height: '44px', borderRadius: '10px', background: 'var(--bg-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--success)' }}>
-              <Briefcase size={20} />
-            </div>
-            <div>
-              <h4 style={{ fontWeight: 700, fontSize: '0.95rem', color: 'var(--text-primary)' }}>Explore Placements</h4>
-              <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.1rem' }}>Browse hiring drives & apply</p>
-            </div>
-          </Link>
-
+      {/* Header */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+        <div>
+          <h1 style={{ fontSize: '1.8rem', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '0.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            Welcome back, {user?.name || 'Student'} <span style={{fontSize: '1.5rem'}}>👋</span>
+          </h1>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '0.95rem' }}>Let's find your dream opportunity today!</p>
         </div>
       </div>
 
-      {/* 4. Split Grid Content */}
-      <div className="grid-3" style={{ gridTemplateColumns: '2fr 1.2fr' }}>
+      {/* Top 4 Metric Cards */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1.5rem', marginBottom: '1.5rem' }}>
         
-        {/* Left Side: Recent Applications */}
-        <div className="glass-panel" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-            <h3 style={{ fontSize: '1.1rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <FileText size={18} /> Recent Applications
-            </h3>
-            <Link to="/jobs" style={{ fontSize: '0.85rem', color: 'var(--accent-primary)', fontWeight: 600 }}>See All Drives</Link>
-          </div>
-
-          {loading ? (
-            <div className="flex-center" style={{ height: '200px' }}><div className="spinner"></div></div>
-          ) : applications.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '3rem 1rem', background: 'var(--bg-primary)', borderRadius: 'var(--radius-md)', border: '1px dashed var(--border-color)' }}>
-              <FileText size={40} color="var(--text-muted)" style={{ marginBottom: '1rem' }} />
-              <h4 style={{ marginBottom: '0.5rem' }}>No applications yet</h4>
-              <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '1rem' }}>Start applying to job drives to track your progress.</p>
-              <Link to="/jobs" className="btn-primary btn-sm">Find Jobs</Link>
+        {/* Active Applications */}
+        <div style={cardStyle}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
+            <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Active Applications</span>
+            <div style={{ background: 'rgba(168, 85, 247, 0.15)', padding: '6px', borderRadius: '8px' }}>
+              <Briefcase size={16} color="#a855f7" />
             </div>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-              {applications.slice(0, 4).map(app => (
-                <div key={app._id} style={{ 
-                  background: 'var(--bg-secondary)', 
-                  padding: '1rem', 
-                  borderRadius: 'var(--radius-md)', 
-                  display: 'flex', 
-                  justifyContent: 'space-between', 
-                  alignItems: 'center', 
-                  flexWrap: 'wrap', 
-                  gap: '1rem', 
-                  border: '1px solid var(--border-color)' 
-                }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                    <div style={{ width: '40px', height: '40px', borderRadius: '8px', background: 'var(--bg-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <Building2 size={20} color="var(--text-muted)" />
-                    </div>
-                    <div>
-                      <h4 style={{ fontWeight: 700, fontSize: '0.95rem' }}>{app.jobId?.title || 'Job Role'}</h4>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.1rem' }}>
-                        <span>{app.jobId?.companyName || 'Company'}</span>
-                        <span>•</span>
-                        <span>{app.jobId?.location || 'Remote'}</span>
-                      </div>
-                    </div>
-                  </div>
-                  <div style={{ textAlign: 'right' }}>
-                    <span style={{ 
-                      color: getStatusColor(app.status), 
-                      fontSize: '0.75rem', 
-                      fontWeight: 700, 
-                      background: `${getStatusColor(app.status)}15`, 
-                      padding: '0.2rem 0.6rem', 
-                      borderRadius: '9999px',
-                      border: `1px solid ${getStatusColor(app.status)}30`
-                    }}>
-                      {app.status}
-                    </span>
-                    <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '0.3rem' }}>
-                      {new Date(app.appliedAt).toLocaleDateString()}
-                    </div>
-                  </div>
+          </div>
+          <div style={{ fontSize: '2.5rem', fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1 }}>{activeAppsCount}</div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: '1rem' }}>
+            <div style={{ fontSize: '0.8rem', color: '#10b981', fontWeight: 600 }}>
+              ↑ 20% <span style={{ color: 'var(--text-muted)', fontWeight: 500 }}>this week</span>
+            </div>
+            <div style={{ width: '60px', height: '30px' }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={dataPurple}>
+                  <Line type="monotone" dataKey="v" stroke="#a855f7" strokeWidth={2} dot={false} isAnimationActive={false} />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        </div>
+
+        {/* Interviews Scheduled */}
+        <div style={cardStyle}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
+            <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Interviews Scheduled</span>
+            <div style={{ background: 'rgba(59, 130, 246, 0.15)', padding: '6px', borderRadius: '8px' }}>
+              <Calendar size={16} color="#3b82f6" />
+            </div>
+          </div>
+          <div style={{ fontSize: '2.5rem', fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1 }}>{interviews.length}</div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: '1rem' }}>
+            <div style={{ fontSize: '0.8rem', color: '#10b981', fontWeight: 600 }}>
+              ↑ 50% <span style={{ color: 'var(--text-muted)', fontWeight: 500 }}>this week</span>
+            </div>
+            <div style={{ width: '60px', height: '30px' }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={dataBlue}>
+                  <Line type="monotone" dataKey="v" stroke="#3b82f6" strokeWidth={2} dot={false} isAnimationActive={false} />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        </div>
+
+        {/* Offers Received */}
+        <div style={cardStyle}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
+            <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Offers Received</span>
+            <div style={{ background: 'rgba(16, 185, 129, 0.15)', padding: '6px', borderRadius: '8px' }}>
+              <CheckCircle size={16} color="#10b981" />
+            </div>
+          </div>
+          <div style={{ fontSize: '2.5rem', fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1 }}>{offers}</div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: '1rem' }}>
+            <div style={{ fontSize: '0.8rem', color: '#10b981', fontWeight: 600 }}>
+              ↑ 100% <span style={{ color: 'var(--text-muted)', fontWeight: 500 }}>this week</span>
+            </div>
+            <div style={{ width: '60px', height: '30px' }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={dataGreen}>
+                  <Line type="monotone" dataKey="v" stroke="#10b981" strokeWidth={2} dot={false} isAnimationActive={false} />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        </div>
+
+        {/* Profile Views */}
+        <div style={cardStyle}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
+            <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Profile Views</span>
+            <div style={{ background: 'rgba(245, 158, 11, 0.15)', padding: '6px', borderRadius: '8px' }}>
+              <Eye size={16} color="#f59e0b" />
+            </div>
+          </div>
+          <div style={{ fontSize: '2.5rem', fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1 }}>{user?.profileViews || 48}</div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: '1rem' }}>
+            <div style={{ fontSize: '0.8rem', color: '#10b981', fontWeight: 600 }}>
+              ↑ 25% <span style={{ color: 'var(--text-muted)', fontWeight: 500 }}>this week</span>
+            </div>
+            <div style={{ width: '60px', height: '30px' }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={dataOrange}>
+                  <Line type="monotone" dataKey="v" stroke="#f59e0b" strokeWidth={2} dot={false} isAnimationActive={false} />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      {/* Middle Grid (Overview, Interviews, Activity) */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1.5fr 1.5fr', gap: '1.5rem', marginBottom: '1.5rem' }}>
+        
+        {/* Application Overview Donut Chart */}
+        <div style={cardStyle}>
+          <span style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '1rem' }}>Application Overview</span>
+          <div style={{ display: 'flex', alignItems: 'center', flex: 1 }}>
+            <div style={{ width: '140px', height: '140px', position: 'relative' }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={displayPieData}
+                    innerRadius={50}
+                    outerRadius={65}
+                    paddingAngle={5}
+                    dataKey="value"
+                    stroke="none"
+                  >
+                    {displayPieData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                </PieChart>
+              </ResponsiveContainer>
+              {/* Center Text */}
+              <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                <span style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1 }}>{totalApps}</span>
+                <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Total</span>
+              </div>
+            </div>
+            
+            {/* Legend */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginLeft: 'auto' }}>
+              {[
+                { label: 'Applied', val: appliedCount, pct: Math.round((appliedCount/totalApps)*100), color: '#3b82f6' },
+                { label: 'Shortlisted', val: shortlistedCount, pct: Math.round((shortlistedCount/totalApps)*100), color: '#a855f7' },
+                { label: 'Interview', val: interviewCount, pct: Math.round((interviewCount/totalApps)*100), color: '#f59e0b' },
+                { label: 'Offered', val: offeredCount, pct: Math.round((offeredCount/totalApps)*100), color: '#10b981' }
+              ].map(item => (
+                <div key={item.label} style={{ display: 'flex', alignItems: 'center', fontSize: '0.8rem' }}>
+                  <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: item.color, marginRight: '8px' }}></span>
+                  <span style={{ color: 'var(--text-secondary)', width: '60px' }}>{item.label}</span>
+                  <span style={{ color: 'var(--text-primary)', fontWeight: 700, marginLeft: '10px' }}>{item.val}</span>
+                  <span style={{ color: 'var(--text-muted)', marginLeft: '4px' }}>({item.pct || 0}%)</span>
                 </div>
               ))}
             </div>
-          )}
-        </div>
-
-        {/* Right Side: AI Insights Card (Dark gradient box) */}
-        <div style={{
-          background: 'linear-gradient(145deg, #1e1b4b 0%, #0f172a 100%)',
-          borderRadius: 'var(--radius-lg)',
-          border: '1px solid rgba(99,102,241,0.2)',
-          padding: '1.5rem',
-          color: '#fff',
-          display: 'flex',
-          flexDirection: 'column',
-          justifyContent: 'space-between',
-          minHeight: '340px'
-        }}>
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1.25rem' }}>
-              <Zap size={20} color="#a855f7" />
-              <h3 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#fff', margin: 0 }}>AI Insights</h3>
-            </div>
-            
-            <p style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.7)', marginBottom: '1.5rem', lineHeight: '1.4' }}>
-              Your profile match rate is optimal. Here are top recommended vacancies tailored to your skillset:
-            </p>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
-              {recommendedJobs.length > 0 ? recommendedJobs.map((job, idx) => (
-                <div key={idx} style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 'var(--radius-md)', padding: '0.75rem 1rem' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', fontWeight: 800, color: job.matchPercentage > 70 ? '#10b981' : '#f59e0b' }}>
-                    <span>{job.matchPercentage > 0 ? `${job.matchPercentage}% MATCH` : 'TOP PICK'}</span>
-                    <span style={{ color: 'rgba(255,255,255,0.4)' }}>{job.companyName}</span>
-                  </div>
-                  <h4 style={{ fontSize: '0.9rem', fontWeight: 700, marginTop: '0.2rem' }}>{job.title}</h4>
-                </div>
-              )) : (
-                <p style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.5)', textAlign: 'center', fontStyle: 'italic', padding: '1rem 0' }}>No matching jobs found right now.</p>
-              )}
-            </div>
           </div>
-
-          <Link to="/jobs" style={{ 
-            display: 'flex', 
-            alignItems: 'center', 
-            justifyContent: 'center', 
-            gap: '0.5rem', 
-            background: 'var(--accent-gradient)',
-            border: 'none',
-            color: '#fff',
-            padding: '0.75rem',
-            borderRadius: 'var(--radius-md)',
-            fontWeight: 700,
-            fontSize: '0.85rem',
-            textDecoration: 'none',
-            marginTop: '1.5rem',
-            textAlign: 'center'
-          }}>
-            Explore Matches <ChevronRight size={16} />
-          </Link>
         </div>
 
+        {/* Upcoming Interviews */}
+        <div style={cardStyle}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem' }}>
+            <span style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-primary)' }}>Upcoming Interviews</span>
+            <MoreHorizontal size={18} color="var(--text-muted)" />
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', flex: 1 }}>
+            {interviews.length > 0 ? interviews.slice(0,2).map((app, idx) => (
+              <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                  <h4 style={{ fontWeight: 700, fontSize: '0.95rem', color: 'var(--text-primary)', marginBottom: '0.2rem' }}>{app.jobId?.companyName || 'Company'} Interview</h4>
+                  <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '0.2rem' }}>{app.jobId?.title || 'Software Engineer'}</p>
+                  <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                    {app.interviewDate ? new Date(app.interviewDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Date TBD'}
+                  </p>
+                </div>
+                <span style={{ 
+                  background: idx === 0 ? 'rgba(59, 130, 246, 0.1)' : 'rgba(16, 185, 129, 0.1)', 
+                  color: idx === 0 ? '#3b82f6' : '#10b981', 
+                  fontSize: '0.7rem', padding: '0.2rem 0.6rem', borderRadius: '4px', fontWeight: 600 
+                }}>
+                  {idx === 0 ? 'Priority' : 'Normal'}
+                </span>
+              </div>
+            )) : (
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                  <h4 style={{ fontWeight: 700, fontSize: '0.95rem', color: 'var(--text-primary)', marginBottom: '0.2rem' }}>No Interviews Yet</h4>
+                  <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Keep applying to land one!</p>
+                </div>
+              </div>
+            )}
+          </div>
+          <div style={{ marginTop: 'auto', textAlign: 'center', paddingTop: '1rem' }}>
+            <Link to="/history" style={{ color: '#3b82f6', fontSize: '0.85rem', fontWeight: 600, textDecoration: 'none' }}>
+              View All
+            </Link>
+          </div>
+        </div>
+
+        {/* Recent Activity */}
+        <div style={cardStyle}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem' }}>
+            <span style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-primary)' }}>Recent Activity</span>
+            <MoreHorizontal size={18} color="var(--text-muted)" />
+          </div>
+          
+          <div style={{ display: 'flex', flexDirection: 'column', position: 'relative', flex: 1, paddingLeft: '1rem' }}>
+            {/* Vertical Line */}
+            <div style={{ position: 'absolute', left: '1rem', top: '10px', bottom: '10px', width: '2px', background: 'var(--border-color)' }}></div>
+            
+            {applications.slice(0, 2).map((app, idx) => (
+              <div key={idx} style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem', position: 'relative' }}>
+                <div style={{ 
+                  width: '32px', height: '32px', borderRadius: '50%', background: 'rgba(16, 185, 129, 0.15)', 
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+                  marginLeft: '-16px', zIndex: 2
+                }}>
+                  <Briefcase size={14} color="#10b981" />
+                </div>
+                <div>
+                  <h4 style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--text-primary)', marginBottom: '0.2rem' }}>Applied to {app.jobId?.title || 'Job'}</h4>
+                  <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{app.jobId?.companyName || 'Company'}</p>
+                </div>
+                <div style={{ marginLeft: 'auto', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                  {new Date(app.appliedAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+                </div>
+              </div>
+            ))}
+
+            <div style={{ display: 'flex', gap: '1rem', position: 'relative' }}>
+              <div style={{ 
+                width: '32px', height: '32px', borderRadius: '50%', background: 'rgba(168, 85, 247, 0.15)', 
+                display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+                marginLeft: '-16px', zIndex: 2
+              }}>
+                <UserCheck size={14} color="#a855f7" />
+              </div>
+              <div>
+                <h4 style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--text-primary)', marginBottom: '0.2rem' }}>Profile Updated</h4>
+                <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Your profile was updated successfully</p>
+              </div>
+              <div style={{ marginLeft: 'auto', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                14 Aug 2026
+              </div>
+            </div>
+
+          </div>
+          <div style={{ marginTop: 'auto', textAlign: 'center', paddingTop: '1rem' }}>
+            <Link to="/history" style={{ color: '#3b82f6', fontSize: '0.85rem', fontWeight: 600, textDecoration: 'none' }}>
+              View All
+            </Link>
+          </div>
+        </div>
       </div>
+
 
     </div>
   );
