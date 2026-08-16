@@ -1,6 +1,6 @@
 # ALTS - AI-Powered Campus Placement Portal
 
-A comprehensive web application designed to streamline the campus placement process for both students and HR teams. Built with the MERN stack (MongoDB, Express.js, React, Node.js), this platform offers dynamic resume building, intelligent job matching, and an intuitive application tracking system.
+A comprehensive web application designed to streamline the campus placement process for both students and HR teams. Built with the MERN stack (MongoDB, Express.js, React, Node.js), this platform offers dynamic resume building, intelligent job matching, high-end analytics, and an intuitive application tracking system.
 
 ## 🚀 Features
 
@@ -13,15 +13,20 @@ A comprehensive web application designed to streamline the campus placement proc
 
 ### For HR / Companies
 - **Applicant Tracking System (ATS):** Manage all applicants for a job posting in one centralized dashboard.
+- **Recruiter Analytics Dashboard:** Live data tracking of active jobs, total applicants, and real-time hiring funnels.
 - **One-Click Resume Viewing:** View student resumes inline without downloading them.
 - **Quick Status Updates:** Easily shortlist, select, or reject candidates.
-- **Automated Email Notifications:** Automatically send congratulatory emails when a candidate is marked as "Selected" or "Shortlisted".
+- **Automated Email Integration:** Automatically send congratulatory emails (via NodeMailer) directly to the student's inbox when marked as "Selected" or "Interview Scheduled".
 - **Direct Messaging:** Send quick template messages to applicants directly from the dashboard.
+
+### System-Wide
+- **Premium Aesthetics:** High-end, seamless dark and light mode styling.
+- **Micro-Animations:** Fluid layout transitions and tab switching powered by Framer Motion.
 
 ## 🛠️ Tech Stack
 
-- **Frontend:** React (Vite), React Router, Context API, Lucide React (Icons), Vanilla CSS
-- **Backend:** Node.js, Express.js, JWT (Authentication)
+- **Frontend:** React (Vite), React Router, Context API, Lucide React, Recharts (Analytics), Framer Motion, Vanilla CSS
+- **Backend:** Node.js, Express.js, JWT (Authentication), NodeMailer (Email)
 - **Database:** MongoDB (Mongoose) - *(Also supports Mock Data mode for easy local development without DB)*
 - **File Parsing:** `pdf-parse`, `mammoth` (for resume text extraction)
 
@@ -29,8 +34,8 @@ A comprehensive web application designed to streamline the campus placement proc
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/yourusername/alts-placement-portal.git
-   cd alts-placement-portal
+   git clone https://github.com/Chintugoud-create/PLACEMENT-PORTOL.git
+   cd PLACEMENT-PORTOL
    ```
 
 2. **Backend Setup**
@@ -39,6 +44,7 @@ A comprehensive web application designed to streamline the campus placement proc
    npm install
    ```
    * Create a `.env` file inside the `server` directory based on `.env.example`.
+   * Configure your `SMTP_USER` and `SMTP_PASS` in the `.env` to enable email notifications.
    * Start the backend server:
    ```bash
    npm run dev
