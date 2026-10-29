@@ -64,14 +64,14 @@ const resolveRouter = (routeModule, routeName) => {
 
   while (pending.length) {
     const candidate = pending.shift();
-    if (typeof candidate === 'function') return candidate;
+    if (typeof candidate === 'function' && Array.isArray(candidate.stack)) return candidate;
     if (!candidate || typeof candidate !== 'object' || seen.has(candidate)) continue;
 
     seen.add(candidate);
-    pending.push(candidate.router, candidate.default, candidate.module);
+    pending.push(...Object.values(candidate));
   }
 
-  throw new TypeError(`${routeName} did not export an Express router`);
+  throw new TypeError(`${routeName} did not export an Express Router`);
 };
 
 // Routes
