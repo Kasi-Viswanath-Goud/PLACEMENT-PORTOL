@@ -1,5 +1,10 @@
 const mongoose = require('mongoose');
 
+// Catch any unhandled mongoose connection error events to prevent Lambda crash
+mongoose.connection.on('error', (err) => {
+  console.warn('Mongoose connection event error caught:', err.message);
+});
+
 const isMongoConnected = () => mongoose.connection.readyState === 1;
 
 const connectDB = async () => {

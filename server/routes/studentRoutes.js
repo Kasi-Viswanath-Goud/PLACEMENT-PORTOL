@@ -3,7 +3,13 @@ const router = express.Router();
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
-const pdfParse = require('pdf-parse');
+let pdfParse;
+try {
+  pdfParse = require('pdf-parse');
+} catch (e) {
+  console.warn('pdf-parse load notice:', e.message);
+  pdfParse = async () => ({ text: '' });
+}
 const mammoth = require('mammoth');
 const { authenticate } = require('../middleware/auth');
 const { isMongoConnected } = require('../config/db');
