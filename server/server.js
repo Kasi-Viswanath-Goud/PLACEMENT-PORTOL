@@ -56,15 +56,33 @@ app.get('/uploads/:filename', async (req, res, next) => {
 
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
+// Route modules can be wrapped in a default export by serverless bundlers.
+// Resolve both CommonJS routers and their wrapped equivalents before mounting.
+const resolveRouter = (routeModule, routeName) => {
+  const pending = [routeModule];
+  const seen = new Set();
+
+  while (pending.length) {
+    const candidate = pending.shift();
+    if (typeof candidate === 'function') return candidate;
+    if (!candidate || typeof candidate !== 'object' || seen.has(candidate)) continue;
+
+    seen.add(candidate);
+    pending.push(candidate.router, candidate.default, candidate.module);
+  }
+
+  throw new TypeError(`${routeName} did not export an Express router`);
+};
+
 // Routes
-const { router: authRoutes } = require('./routes/authRoutes');
-const studentRoutes = require('./routes/studentRoutes');
-const { router: jobRoutes } = require('./routes/jobRoutes');
-const { router: applicationRoutes } = require('./routes/applicationRoutes');
-const notificationRoutes = require('./routes/notificationRoutes');
-const messageRoutes = require('./routes/messageRoutes');
-const savedJobRoutes = require('./routes/savedJobRoutes');
-const adminRoutes = require('./routes/adminRoutes');
+const authRoutes = resolveRouter(require('./routes/authRoutes'), 'authRoutes');
+const studentRoutes = resolveRouter(require('./routes/studentRoutes'), 'studentRoutes');
+const jobRoutes = resolveRouter(require('./routes/jobRoutes'), 'jobRoutes');
+const applicationRoutes = resolveRouter(require('./routes/applicationRoutes'), 'applicationRoutes');
+const notificationRoutes = resolveRouter(require('./routes/notificationRoutes'), 'notificationRoutes');
+const messageRoutes = resolveRouter(require('./routes/messageRoutes'), 'messageRoutes');
+const savedJobRoutes = resolveRouter(require('./routes/savedJobRoutes'), 'savedJobRoutes');
+const adminRoutes = resolveRouter(require('./routes/adminRoutes'), 'adminRoutes');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/student', studentRoutes);
