@@ -86,9 +86,12 @@ app.use((err, req, res, next) => {
   res.status(500).json({ message: 'Internal Server Error', error: err.message });
 });
 
-app.listen(PORT, () => {
-  console.log(`\n🚀 ALTS Server running on port ${PORT}`);
-  console.log(`🌐 http://localhost:${PORT}/api/health\n`);
-});
+// Only start listening when running locally (not on Vercel)
+if (!process.env.VERCEL) {
+  app.listen(PORT, () => {
+    console.log(`\n🚀 ALTS Server running on port ${PORT}`);
+    console.log(`🌐 http://localhost:${PORT}/api/health\n`);
+  });
+}
 
 module.exports = app;
