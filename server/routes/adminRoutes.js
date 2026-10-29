@@ -31,10 +31,10 @@ router.get('/stats', authenticate, authorize('admin'), async (req, res) => {
       const jobs = getMockJobs();
       const apps = getMockApps();
       return res.json({
-        totalStudents: users.filter(u => u.role === 'student').length || 150,
-        totalCompanies: users.filter(u => u.role === 'company').length || 24,
-        totalJobs: jobs.length || 12,
-        totalApplications: apps.length || 340,
+        totalStudents: users.filter(u => u.role === 'student').length,
+        totalCompanies: users.filter(u => u.role === 'company').length,
+        totalJobs: jobs.length,
+        totalApplications: apps.length,
         placementRate: '65.3%', highestPackage: '44.5 LPA', avgPackage: '14.8 LPA',
         totalInterviews: 89, monthlyGrowth: '+12.5%'
       });
@@ -109,6 +109,54 @@ router.get('/candidates', authenticate, async (req, res) => {
     }
   } catch (err) {
     res.status(500).json({ message: 'Error searching candidates.' });
+  }
+});
+// Pending HR requests
+router.get('/pending-hr', authenticate, authorize('admin'), async (req, res) => {
+  try {
+    if (isMongoConnected()) {
+      const users = await User.find({ role: 'company', isVerified: false }).select('-password').sort({ createdAt: -1 });
+      return res.json(users);
+    } else {
+      const users = getMockUsers().filter(u => u.role === 'company' && u.isVerified === false);
+      return res.json(users.map(({ password, ...u }) => u));
+    }
+  } catch (err) {
+    res.status(500).json({ message: 'Error fetching pending HRs.' });
+  }
+});
+
+// Approve HR
+router.post('/hr/:id/approve', authenticate, authorize('admin'), async (req, res) => {
+  try {
+    if (isMongoConnected()) {
+      await User.findByIdAndUpdate(req.params.id, { isVerified: true });
+      return res.json({ message: 'HR request approved.' });
+    } else {
+      const users = getMockUsers();
+      const user = users.find(u => u._id === req.params.id);
+      if (user) user.isVerified = true;
+      return res.json({ message: 'HR request approved.' });
+    }
+  } catch (err) {
+    res.status(500).json({ message: 'Error approving HR.' });
+  }
+});
+
+// Decline HR
+router.delete('/hr/:id/decline', authenticate, authorize('admin'), async (req, res) => {
+  try {
+    if (isMongoConnected()) {
+      await User.findByIdAndDelete(req.params.id);
+      return res.json({ message: 'HR request declined and removed.' });
+    } else {
+      const users = getMockUsers();
+      const idx = users.findIndex(u => u._id === req.params.id);
+      if (idx !== -1) users.splice(idx, 1);
+      return res.json({ message: 'HR request declined and removed.' });
+    }
+  } catch (err) {
+    res.status(500).json({ message: 'Error declining HR.' });
   }
 });
 

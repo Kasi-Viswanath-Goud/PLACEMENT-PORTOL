@@ -64,6 +64,7 @@ const { router: applicationRoutes } = require('./routes/applicationRoutes');
 const notificationRoutes = require('./routes/notificationRoutes');
 const messageRoutes = require('./routes/messageRoutes');
 const savedJobRoutes = require('./routes/savedJobRoutes');
+const adminRoutes = require('./routes/adminRoutes');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/student', studentRoutes);
@@ -72,6 +73,7 @@ app.use('/api/applications', applicationRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/messages', messageRoutes);
 app.use('/api/saved-jobs', savedJobRoutes);
+app.use('/api/admin', adminRoutes);
 
 // Health Check
 app.get('/api/health', (req, res) => {
@@ -88,3 +90,5 @@ app.listen(PORT, () => {
   console.log(`\n🚀 ALTS Server running on port ${PORT}`);
   console.log(`🌐 http://localhost:${PORT}/api/health\n`);
 });
+
+module.exports = app;

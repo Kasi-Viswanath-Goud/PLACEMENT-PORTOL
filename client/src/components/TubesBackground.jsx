@@ -1,113 +1,80 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React from 'react';
 
-// Helper for random colors
-const randomColors = (count) => {
-  return new Array(count)
-    .fill(0)
-    .map(() => "#" + Math.floor(Math.random() * 16777215).toString(16).padStart(6, '0'));
-};
-
-export function TubesBackground({ 
-  children, 
-  style = {},
-  enableClickInteraction = true 
-}) {
-  const canvasRef = useRef(null);
-  const tubesRef = useRef(null);
-  const [isLoaded, setIsLoaded] = useState(false);
-
-  useEffect(() => {
-    let mounted = true;
-    let cleanup;
-
-    const initTubes = async () => {
-      if (!canvasRef.current) return;
-
-      try {
-        const module = await import(
-          /* @vite-ignore */
-          'https://cdn.jsdelivr.net/npm/threejs-components@0.0.19/build/cursors/tubes1.min.js'
-        );
-        const TubesCursor = module.default;
-
-        if (!mounted) return;
-
-        const app = TubesCursor(canvasRef.current, {
-          tubes: {
-            colors: ["#6366f1", "#06b6d4", "#8b5cf6"],
-            lights: {
-              intensity: 200,
-              colors: ["#6366f1", "#06b6d4", "#f59e0b", "#ec4899"]
-            }
-          }
-        });
-
-        tubesRef.current = app;
-        setIsLoaded(true);
-
-        const handleResize = () => {};
-        window.addEventListener('resize', handleResize);
-        
-        cleanup = () => {
-          window.removeEventListener('resize', handleResize);
-        };
-
-      } catch (error) {
-        console.error("Failed to load TubesCursor:", error);
-      }
-    };
-
-    initTubes();
-
-    return () => {
-      mounted = false;
-      if (cleanup) cleanup();
-    };
-  }, []);
-
-  const handleClick = () => {
-    if (!enableClickInteraction || !tubesRef.current) return;
-    
-    const colors = randomColors(3);
-    const lightsColors = randomColors(4);
-    
-    tubesRef.current.tubes.setColors(colors);
-    tubesRef.current.tubes.setLightsColors(lightsColors);
-  };
-
+export function TubesBackground({ children, style = {} }) {
   return (
     <div 
       style={{
         position: 'relative',
         width: '100%',
         overflow: 'hidden',
+        background: 'var(--bg-primary)',
         ...style
       }}
-      onClick={handleClick}
     >
-      {/* WebGL Canvas */}
-      <canvas 
-        ref={canvasRef} 
-        style={{
-          position: 'absolute',
-          inset: 0,
-          width: '100%',
-          height: '100%',
-          display: 'block',
-          touchAction: 'none'
-        }}
-      />
-      
-      {/* Subtle gradient overlay for text readability */}
+      {/* Top Left Glowing Orb */}
       <div style={{
         position: 'absolute',
-        inset: 0,
-        background: 'radial-gradient(ellipse at center, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.5) 100%)',
-        pointerEvents: 'none',
-        zIndex: 1
+        top: '-15%',
+        left: '-10%',
+        width: '400px',
+        height: '400px',
+        borderRadius: '50%',
+        border: '2px solid rgba(99, 102, 241, 0.3)',
+        boxShadow: 'inset -30px -30px 80px rgba(139, 92, 246, 0.15), 0 0 100px rgba(99, 102, 241, 0.15)',
+        background: 'transparent',
+        zIndex: 0,
+        pointerEvents: 'none'
       }} />
 
-      {/* Content Overlay */}
+      {/* Bottom Right Glowing Orb */}
+      <div style={{
+        position: 'absolute',
+        bottom: '-30%',
+        right: '-15%',
+        width: '500px',
+        height: '500px',
+        borderRadius: '50%',
+        border: '2px solid rgba(6, 182, 212, 0.3)',
+        boxShadow: 'inset 30px 30px 80px rgba(6, 182, 212, 0.1), 0 0 120px rgba(6, 182, 212, 0.1)',
+        background: 'transparent',
+        zIndex: 0,
+        pointerEvents: 'none'
+      }} />
+
+      {/* Dotted Pattern Top Right */}
+      <div style={{
+        position: 'absolute',
+        top: '5%',
+        right: '5%',
+        width: '400px',
+        height: '400px',
+        opacity: 0.3,
+        backgroundImage: 'radial-gradient(var(--text-muted) 2px, transparent 2px)',
+        backgroundSize: '30px 30px',
+        maskImage: 'radial-gradient(circle, rgba(0,0,0,1) 0%, rgba(0,0,0,0) 60%)',
+        WebkitMaskImage: 'radial-gradient(circle, rgba(0,0,0,1) 0%, rgba(0,0,0,0) 60%)',
+        zIndex: 0,
+        pointerEvents: 'none'
+      }} />
+
+      {/* Dotted Pattern Bottom Left */}
+      <div style={{
+        position: 'absolute',
+        bottom: '0%',
+        left: '5%',
+        width: '400px',
+        height: '400px',
+        opacity: 0.3,
+        backgroundImage: 'radial-gradient(var(--text-muted) 2px, transparent 2px)',
+        backgroundSize: '30px 30px',
+        maskImage: 'radial-gradient(circle, rgba(0,0,0,1) 0%, rgba(0,0,0,0) 60%)',
+        WebkitMaskImage: 'radial-gradient(circle, rgba(0,0,0,1) 0%, rgba(0,0,0,0) 60%)',
+        zIndex: 0,
+        pointerEvents: 'none'
+      }} />
+
+
+
       <div style={{
         position: 'relative',
         zIndex: 2,

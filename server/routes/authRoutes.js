@@ -2,43 +2,13 @@ const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const { OAuth2Client } = require('google-auth-library');
 const User = require('../models/User');
 const { authenticate, JWT_SECRET } = require('../middleware/auth');
 const { isMongoConnected } = require('../config/db');
 
 // In-Memory Fallback Store
-const mockUsers = [
-  {
-    _id: 'student_1', name: 'Rahul Sharma', email: 'rahul@campus.edu', role: 'student',
-    cgpa: 8.8, branch: 'Computer Science', passingYear: 2026, phone: '+91 9876543210',
-    college: 'IIT Delhi', degree: 'B.Tech', headline: 'Full-Stack Developer | AI Enthusiast',
-    skills: ['React', 'Node.js', 'Python', 'MongoDB', 'AWS'],
-    education: [{ institution: 'IIT Delhi', degree: 'B.Tech', field: 'Computer Science', grade: '8.8 CGPA' }],
-    projects: [{ title: 'AI Placement Portal', description: 'Built an AI-powered job portal', techStack: ['React', 'Node.js'] }],
-    github: 'https://github.com/rahul', linkedin: 'https://linkedin.com/in/rahul',
-    resumeUrl: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf'
-  },
-  {
-    _id: 'student_2', name: 'Priya Patel', email: 'priya@campus.edu', role: 'student',
-    cgpa: 9.1, branch: 'Information Technology', passingYear: 2026, phone: '+91 9998887776',
-    college: 'NIT Trichy', degree: 'B.Tech', headline: 'Data Science Intern | ML Engineer',
-    skills: ['Python', 'TensorFlow', 'SQL', 'Data Analysis'],
-    education: [{ institution: 'NIT Trichy', degree: 'B.Tech', field: 'Information Technology', grade: '9.1 CGPA' }],
-    projects: [{ title: 'Sales Predictor', description: 'ML model to predict e-commerce sales', techStack: ['Python', 'Pandas'] }],
-    github: 'https://github.com/priya', linkedin: 'https://linkedin.com/in/priya',
-    resumeUrl: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf'
-  },
-  {
-    _id: 'student_3', name: 'Amit Kumar', email: 'amit@campus.edu', role: 'student',
-    cgpa: 7.5, branch: 'Electronics', passingYear: 2026, phone: '+91 8887776665',
-    college: 'BITS Pilani', degree: 'B.E.', headline: 'IoT Developer | Hardware Hacker',
-    skills: ['C++', 'IoT', 'Embedded Systems', 'Arduino'],
-    education: [{ institution: 'BITS Pilani', degree: 'B.E.', field: 'Electronics', grade: '7.5 CGPA' }],
-    projects: [{ title: 'Smart Home Hub', description: 'IoT based automated home system', techStack: ['C++', 'Arduino'] }],
-    github: 'https://github.com/amit', linkedin: 'https://linkedin.com/in/amit',
-    resumeUrl: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf'
-  }
-];
+const mockUsers = [];
 
 const findMockUser = (email) => mockUsers.find(u => u.email.toLowerCase() === email.toLowerCase());
 
@@ -63,7 +33,8 @@ router.post('/register', async (req, res) => {
         college: college || '', university: university || '', degree: degree || 'B.Tech',
         companyName: companyName || (assignedRole === 'company' ? name : ''),
         website: website || '', industry: industry || '',
-        skills: assignedRole === 'student' ? ['JavaScript', 'React', 'Node.js'] : []
+        skills: assignedRole === 'student' ? ['JavaScript', 'React', 'Node.js'] : [],
+        isVerified: assignedRole === 'company' ? false : true
       });
       await user.save();
       const token = jwt.sign({ id: user._id, role: user.role, email: user.email, name: user.name, companyName: user.companyName }, JWT_SECRET, { expiresIn: '7d' });
@@ -80,6 +51,7 @@ router.post('/register', async (req, res) => {
         summary: 'Passionate software engineer with hands-on experience in MERN stack, Python, and cloud technologies. Built multiple production-grade applications and contributed to open-source projects.',
         skills: assignedRole === 'student' ? ['React', 'Node.js', 'Python', 'JavaScript', 'TypeScript', 'MongoDB', 'Express.js', 'Git', 'Docker', 'AWS', 'REST APIs', 'GraphQL'] : [],
         programmingLanguages: assignedRole === 'student' ? ['JavaScript', 'Python', 'Java', 'C++', 'TypeScript'] : [],
+        isVerified: assignedRole === 'company' ? false : true,
         projects: assignedRole === 'student' ? [
           { title: 'AI-Powered Job Portal', description: 'Full-stack placement portal with AI resume matching, real-time notifications, and analytics dashboard', techStack: ['React', 'Node.js', 'MongoDB', 'Express.js'], liveUrl: '', githubUrl: 'https://github.com/demo/job-portal' },
           { title: 'E-Commerce Microservices', description: 'Scalable e-commerce platform using microservices architecture with payment gateway integration', techStack: ['React', 'Spring Boot', 'PostgreSQL', 'Docker', 'Kafka'], liveUrl: '', githubUrl: 'https://github.com/demo/ecommerce' },
@@ -127,9 +99,88 @@ router.post('/login', async (req, res) => {
     const { email, password } = req.body;
     if (!email || !password) return res.status(400).json({ message: 'Email and password required.' });
 
+    let demoUsersDict = null;
+    const getDemoUsers = async () => {
+      if (demoUsersDict) return demoUsersDict;
+      const hp = await bcrypt.hash('password123', 10);
+      demoUsersDict = {
+        'student@campus.edu': {
+          _id: 'mock_student_1', name: 'Chintu', email: 'student@campus.edu', password: hp, role: 'student',
+          cgpa: 8.5, branch: 'Computer Science', passingYear: 2026, phone: '+91 9876543210',
+          college: 'IIT Delhi', university: 'IIT Delhi', degree: 'B.Tech',
+          headline: 'Full-Stack Developer | Open Source Enthusiast',
+          summary: 'Passionate Computer Science student with expertise in web development, machine learning, and cloud computing.',
+          skills: ['HTML', 'CSS', 'JavaScript', 'React', 'Git', 'Node.js'],
+          programmingLanguages: ['JavaScript', 'Python', 'C++', 'Java'],
+          projects: [
+            { title: 'E-Commerce Platform', description: 'Full-stack marketplace with payment integration', techStack: ['React', 'Node.js', 'MongoDB'], liveUrl: '', githubUrl: 'https://github.com/alex/ecommerce' },
+            { title: 'AI Chatbot', description: 'NLP-powered chatbot for customer support', techStack: ['Python', 'TensorFlow', 'Flask'], liveUrl: '', githubUrl: 'https://github.com/alex/chatbot' }
+          ],
+          internships: [
+            { company: 'Microsoft', role: 'Software Engineering Intern', duration: '3 months', description: 'Worked on Azure DevOps tooling' }
+          ],
+          experience: [], education: [
+            { institution: 'IIT Delhi', degree: 'B.Tech', field: 'Computer Science', grade: '8.5 CGPA', startYear: 2022, endYear: 2026 }
+          ],
+          certifications: [
+            { title: 'AWS Cloud Practitioner', issuer: 'Amazon Web Services', date: '2025', url: '' }
+          ],
+          achievements: [
+            { title: 'Google Code Jam Finalist', description: 'Top 500 globally', date: '2025' }
+          ],
+          resumeUrl: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf', resumeOriginalName: 'Chintu_Resume.pdf', resumeScore: 78,
+          github: 'https://github.com/alexjohnson', linkedin: 'https://linkedin.com/in/alexjohnson',
+          portfolio: '', personalWebsite: '', twitter: '',
+          profilePicture: '', profileViews: 42,
+          portfolioData: { heroTagline: '', aboutMe: '', themeColor: '#6366F1', isPublic: false },
+          companyName: '', website: '', industry: '', isVerified: true, createdAt: new Date(), updatedAt: new Date()
+        },
+        'hr@google.com': {
+          _id: 'mock_hr_1', name: 'Sarah Chen', email: 'hr@google.com', password: hp, role: 'company',
+          companyName: 'Google', website: 'https://careers.google.com', industry: 'Technology',
+          hrContactName: 'Sarah Chen', designation: 'Senior Recruiter', department: 'Talent Acquisition',
+          description: 'Global technology leader', skills: [], programmingLanguages: [],
+          projects: [], internships: [], experience: [], education: [], certifications: [], achievements: [],
+          cgpa: 0, branch: '', passingYear: 0, phone: '+91 9999888877',
+          resumeUrl: '', resumeOriginalName: '', resumeScore: 0,
+          github: '', linkedin: '', portfolio: '', personalWebsite: '', twitter: '',
+          headline: '', summary: '', profilePicture: '', profileViews: 0,
+          portfolioData: { heroTagline: '', aboutMe: '', themeColor: '#6366F1', isPublic: false },
+          college: '', university: '', degree: '',
+          isVerified: true, createdAt: new Date(), updatedAt: new Date()
+        },
+        'admin@placement.edu': {
+          _id: 'mock_admin_1', name: 'Prof. Rajesh Kumar', email: 'admin@placement.edu', password: hp, role: 'admin',
+          designation: 'Placement Officer', department: 'Training & Placement Cell',
+          skills: [], programmingLanguages: [], projects: [], internships: [], experience: [],
+          education: [], certifications: [], achievements: [],
+          cgpa: 0, branch: '', passingYear: 0, phone: '+91 9999000011',
+          resumeUrl: '', resumeOriginalName: '', resumeScore: 0,
+          github: '', linkedin: '', portfolio: '', personalWebsite: '', twitter: '',
+          headline: '', summary: '', profilePicture: '', profileViews: 0,
+          portfolioData: { heroTagline: '', aboutMe: '', themeColor: '#6366F1', isPublic: false },
+          companyName: '', website: '', industry: '', college: '', university: '', degree: '',
+          isVerified: true, createdAt: new Date(), updatedAt: new Date()
+        }
+      };
+      return demoUsersDict;
+    };
+
     if (isMongoConnected()) {
-      const user = await User.findOne({ email });
+      let user = await User.findOne({ email });
+      if (!user && ['student@campus.edu', 'hr@google.com', 'admin@placement.edu'].includes(email)) {
+        const demos = await getDemoUsers();
+        const demoData = { ...demos[email] };
+        delete demoData._id; // Let Mongo generate _id
+        user = new User(demoData);
+        await user.save();
+      }
       if (!user) return res.status(400).json({ message: 'Invalid credentials.' });
+
+      if (user.role === 'company' && user.isVerified === false) {
+        return res.status(403).json({ message: 'Your account is pending admin approval.' });
+      }
+
       const isMatch = await bcrypt.compare(password, user.password);
       if (!isMatch) return res.status(400).json({ message: 'Invalid credentials.' });
       const token = jwt.sign({ id: user._id, role: user.role, email: user.email, name: user.name, companyName: user.companyName }, JWT_SECRET, { expiresIn: '7d' });
@@ -139,71 +190,16 @@ router.post('/login', async (req, res) => {
       // Seed demo accounts
       let user = findMockUser(email);
       if (!user && ['student@campus.edu', 'hr@google.com', 'admin@placement.edu'].includes(email)) {
-        const hp = await bcrypt.hash('password123', 10);
-        const demos = {
-          'student@campus.edu': {
-            _id: 'mock_student_1', name: 'Chintu', email: 'student@campus.edu', password: hp, role: 'student',
-            cgpa: 8.5, branch: 'Computer Science', passingYear: 2026, phone: '+91 9876543210',
-            college: 'IIT Delhi', university: 'IIT Delhi', degree: 'B.Tech',
-            headline: 'Full-Stack Developer | Open Source Enthusiast',
-            summary: 'Passionate Computer Science student with expertise in web development, machine learning, and cloud computing.',
-            skills: ['HTML', 'CSS', 'JavaScript', 'React', 'Git', 'Node.js'],
-            programmingLanguages: ['JavaScript', 'Python', 'C++', 'Java'],
-            projects: [
-              { title: 'E-Commerce Platform', description: 'Full-stack marketplace with payment integration', techStack: ['React', 'Node.js', 'MongoDB'], liveUrl: '', githubUrl: 'https://github.com/alex/ecommerce' },
-              { title: 'AI Chatbot', description: 'NLP-powered chatbot for customer support', techStack: ['Python', 'TensorFlow', 'Flask'], liveUrl: '', githubUrl: 'https://github.com/alex/chatbot' }
-            ],
-            internships: [
-              { company: 'Microsoft', role: 'Software Engineering Intern', duration: '3 months', description: 'Worked on Azure DevOps tooling' }
-            ],
-            experience: [], education: [
-              { institution: 'IIT Delhi', degree: 'B.Tech', field: 'Computer Science', grade: '8.5 CGPA', startYear: 2022, endYear: 2026 }
-            ],
-            certifications: [
-              { title: 'AWS Cloud Practitioner', issuer: 'Amazon Web Services', date: '2025', url: '' }
-            ],
-            achievements: [
-              { title: 'Google Code Jam Finalist', description: 'Top 500 globally', date: '2025' }
-            ],
-            resumeUrl: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf', resumeOriginalName: 'Chintu_Resume.pdf', resumeScore: 78,
-            github: 'https://github.com/alexjohnson', linkedin: 'https://linkedin.com/in/alexjohnson',
-            portfolio: '', personalWebsite: '', twitter: '',
-            profilePicture: '', profileViews: 42,
-            portfolioData: { heroTagline: '', aboutMe: '', themeColor: '#6366F1', isPublic: false },
-            companyName: '', website: '', industry: '', isVerified: true, createdAt: new Date(), updatedAt: new Date()
-          },
-          'hr@google.com': {
-            _id: 'mock_hr_1', name: 'Sarah Chen', email: 'hr@google.com', password: hp, role: 'company',
-            companyName: 'Google', website: 'https://careers.google.com', industry: 'Technology',
-            hrContactName: 'Sarah Chen', designation: 'Senior Recruiter', department: 'Talent Acquisition',
-            description: 'Global technology leader', skills: [], programmingLanguages: [],
-            projects: [], internships: [], experience: [], education: [], certifications: [], achievements: [],
-            cgpa: 0, branch: '', passingYear: 0, phone: '+91 9999888877',
-            resumeUrl: '', resumeOriginalName: '', resumeScore: 0,
-            github: '', linkedin: '', portfolio: '', personalWebsite: '', twitter: '',
-            headline: '', summary: '', profilePicture: '', profileViews: 0,
-            portfolioData: { heroTagline: '', aboutMe: '', themeColor: '#6366F1', isPublic: false },
-            college: '', university: '', degree: '',
-            isVerified: true, createdAt: new Date(), updatedAt: new Date()
-          },
-          'admin@placement.edu': {
-            _id: 'mock_admin_1', name: 'Prof. Rajesh Kumar', email: 'admin@placement.edu', password: hp, role: 'admin',
-            designation: 'Placement Officer', department: 'Training & Placement Cell',
-            skills: [], programmingLanguages: [], projects: [], internships: [], experience: [],
-            education: [], certifications: [], achievements: [],
-            cgpa: 0, branch: '', passingYear: 0, phone: '+91 9999000011',
-            resumeUrl: '', resumeOriginalName: '', resumeScore: 0,
-            github: '', linkedin: '', portfolio: '', personalWebsite: '', twitter: '',
-            headline: '', summary: '', profilePicture: '', profileViews: 0,
-            portfolioData: { heroTagline: '', aboutMe: '', themeColor: '#6366F1', isPublic: false },
-            companyName: '', website: '', industry: '', college: '', university: '', degree: '',
-            isVerified: true, createdAt: new Date(), updatedAt: new Date()
-          }
-        };
+        const demos = await getDemoUsers();
         user = demos[email];
         if (user) mockUsers.push(user);
       }
       if (!user) return res.status(400).json({ message: 'Invalid credentials.' });
+
+      if (user.role === 'company' && user.isVerified === false) {
+        return res.status(403).json({ message: 'Your account is pending admin approval.' });
+      }
+
       const isMatch = await bcrypt.compare(password, user.password);
       if (!isMatch) return res.status(400).json({ message: 'Invalid credentials.' });
       const token = jwt.sign({ id: user._id, role: user.role, email: user.email, name: user.name, companyName: user.companyName }, JWT_SECRET, { expiresIn: '7d' });
@@ -213,6 +209,91 @@ router.post('/login', async (req, res) => {
   } catch (err) {
     console.error('Login Error:', err);
     res.status(500).json({ message: 'Server error.', error: err.message });
+  }
+});
+
+// Google Login
+router.post('/google', async (req, res) => {
+  try {
+    const { credential, role } = req.body;
+    if (!credential) return res.status(400).json({ message: 'Google credential is required.' });
+
+    const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID || 'dummy-client-id');
+    
+    let payload;
+    try {
+      const ticket = await client.verifyIdToken({
+        idToken: credential,
+        audience: process.env.GOOGLE_CLIENT_ID || 'dummy-client-id',
+      });
+      payload = ticket.getPayload();
+    } catch (err) {
+      // Fallback decode for local development if verify fails
+      payload = jwt.decode(credential);
+      if (!payload) return res.status(400).json({ message: 'Invalid Google credential.' });
+    }
+
+    const { email, name, picture, sub: googleId } = payload;
+    const assignedRole = ['student', 'company', 'admin'].includes(role) ? role : 'student';
+
+    if (isMongoConnected()) {
+      let user = await User.findOne({ email });
+      
+      if (!user) {
+        user = new User({
+          name, 
+          email, 
+          googleId, 
+          role: assignedRole,
+          profilePicture: picture,
+          companyName: assignedRole === 'company' ? name : '',
+          skills: assignedRole === 'student' ? ['JavaScript', 'React'] : [],
+          isVerified: assignedRole === 'company' ? false : true
+        });
+        await user.save();
+      } else if (!user.googleId) {
+        user.googleId = googleId;
+        user.profilePicture = user.profilePicture || picture;
+        await user.save();
+      }
+
+      if (user.role === 'company' && user.isVerified === false) {
+        return res.status(403).json({ message: 'Your account is pending admin approval.' });
+      }
+
+      const token = jwt.sign({ id: user._id, role: user.role, email: user.email, name: user.name, companyName: user.companyName }, JWT_SECRET, { expiresIn: '7d' });
+      const { password: _, ...userData } = user.toObject();
+      return res.json({ message: 'Google Login successful!', token, user: userData });
+      
+    } else {
+      let user = findMockUser(email);
+      if (!user) {
+        user = {
+          _id: 'usr_google_' + Date.now(), name, email, role: assignedRole,
+          googleId, profilePicture: picture,
+          cgpa: 8.0, branch: 'Computer Science', passingYear: 2026, phone: '',
+          college: 'IIIT Hyderabad', university: 'IIIT Hyderabad', degree: 'B.Tech',
+          headline: 'Student', summary: '', skills: [], programmingLanguages: [],
+          projects: [], internships: [], experience: [], education: [], certifications: [], achievements: [],
+          resumeUrl: '', resumeOriginalName: '', resumeScore: 0,
+          github: '', linkedin: '', portfolio: '', personalWebsite: '', twitter: '',
+          companyName: assignedRole === 'company' ? name : '', website: '', industry: '', hrContactName: '', designation: '', department: '', description: '', profileViews: 1,
+          portfolioData: { heroTagline: '', aboutMe: '', themeColor: '#6366F1', isPublic: false },
+          isVerified: assignedRole === 'company' ? false : true, createdAt: new Date(), updatedAt: new Date()
+        };
+        mockUsers.push(user);
+      }
+
+      if (user.role === 'company' && user.isVerified === false) {
+        return res.status(403).json({ message: 'Your account is pending admin approval.' });
+      }
+      const token = jwt.sign({ id: user._id, role: user.role, email: user.email, name: user.name, companyName: user.companyName }, JWT_SECRET, { expiresIn: '7d' });
+      const { password: _, ...userData } = user;
+      return res.json({ message: 'Google Login successful!', token, user: userData });
+    }
+  } catch (err) {
+    console.error('Google Auth Error:', err);
+    res.status(500).json({ message: 'Google authentication failed.', error: err.message });
   }
 });
 

@@ -19,6 +19,8 @@ import PostJob from './pages/Company/PostJob';
 import ApplicantsList from './pages/Company/ApplicantsList';
 import ActivePostings from './pages/Company/ActivePostings';
 
+import AdminDashboard from './pages/Admin/Dashboard';
+
 import JobsPage from './pages/Jobs/JobsPage';
 import JobDetails from './pages/Jobs/JobDetails';
 
@@ -99,8 +101,17 @@ export default function App() {
             <Route path="/company-analytics" element={<CompanyAnalytics />} />
             <Route path="/active-postings" element={<ActivePostings />} />
             <Route path="/post-job" element={<PostJob />} />
-            <Route path="/jobs/:id/applicants" element={<ApplicantsList />} />
             <Route path="/candidates" element={<div className="container">Candidate Search</div>} />
+          </Route>
+
+          {/* Shared: Company & Admin can view applicants */}
+          <Route element={<ProtectedRoute allowedRoles={['company', 'admin']} />}>
+            <Route path="/jobs/:id/applicants" element={<ApplicantsList />} />
+          </Route>
+
+          {/* Admin Specific */}
+          <Route element={<ProtectedRoute allowedRoles={['admin']} />}>
+            <Route path="/admin-dashboard" element={<AdminDashboard />} />
           </Route>
         </Route>
       ) : (
@@ -134,6 +145,8 @@ export default function App() {
           <Route path="/active-postings" element={<Navigate to="/login" replace />} />
           <Route path="/jobs/:id/applicants" element={<Navigate to="/login" replace />} />
           <Route path="/candidates" element={<Navigate to="/login" replace />} />
+          <Route path="/admin-dashboard" element={<Navigate to="/login" replace />} />
+          <Route path="*" element={<NotFound />} />
         </Route>
       )}
 

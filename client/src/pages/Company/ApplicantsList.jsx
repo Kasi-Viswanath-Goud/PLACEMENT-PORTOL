@@ -143,7 +143,7 @@ export const ApplicantsList = () => {
     <div className="container animate-fade-in" style={{ padding: '2rem' }}>
       
       <div style={{ marginBottom: '2rem' }}>
-        <Link to="/company-dashboard" style={{ color: 'var(--accent-primary)', fontSize: '0.9rem', fontWeight: 600, marginBottom: '1rem', display: 'inline-block' }}>&larr; Back to Dashboard</Link>
+        <Link to={currentUser?.role === 'admin' ? '/admin-dashboard' : '/company-dashboard'} style={{ color: 'var(--accent-primary)', fontSize: '0.9rem', fontWeight: 600, marginBottom: '1rem', display: 'inline-block' }}>&larr; Back to Dashboard</Link>
         <h1 style={{ fontSize: '2rem', fontWeight: 800 }}>Applicants for {job?.title}</h1>
         <p style={{ color: 'var(--text-secondary)' }}>Review and manage candidates who have applied for this role.</p>
       </div>
@@ -211,18 +211,20 @@ export const ApplicantsList = () => {
                     </td>
                     <td style={{ padding: '1rem', textAlign: 'right' }}>
                       <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end', alignItems: 'center' }}>
-                        <select 
-                          className="form-select" 
-                          style={{ padding: '0.4rem 1rem', width: 'auto', fontSize: '0.85rem' }}
-                          value={app.status}
-                          onChange={(e) => handleStatusChange(app._id, e.target.value)}
-                        >
-                          <option value="Applied">Applied</option>
-                          <option value="Shortlisted">Shortlist</option>
-                          <option value="Interview Scheduled">Schedule Interview</option>
-                          <option value="Selected">Select Candidate</option>
-                          <option value="Rejected">Reject</option>
-                        </select>
+                        {currentUser?.role !== 'admin' && (
+                          <select 
+                            className="form-select" 
+                            style={{ padding: '0.4rem 1rem', width: 'auto', fontSize: '0.85rem' }}
+                            value={app.status}
+                            onChange={(e) => handleStatusChange(app._id, e.target.value)}
+                          >
+                            <option value="Applied">Applied</option>
+                            <option value="Shortlisted">Shortlist</option>
+                            <option value="Interview Scheduled">Schedule Interview</option>
+                            <option value="Selected">Select Candidate</option>
+                            <option value="Rejected">Reject</option>
+                          </select>
+                        )}
                         {app.studentId?.resumeUrl && (
                           <button 
                             onClick={() => openResume(app.studentId.resumeUrl, app.studentId?.resumeOriginalName || `${app.studentId?.name || 'Applicant'}'s Resume`)}
@@ -233,14 +235,16 @@ export const ApplicantsList = () => {
                             <Eye size={14} /> Resume
                           </button>
                         )}
-                        <button 
-                          onClick={() => openMessage(app)}
-                          className="btn-secondary btn-sm" 
-                          title="Message Applicant"
-                          style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', padding: '0.4rem 0.75rem', cursor: 'pointer' }}
-                        >
-                          <MessageSquare size={14} /> Message
-                        </button>
+                        {currentUser?.role !== 'admin' && (
+                          <button 
+                            onClick={() => openMessage(app)}
+                            className="btn-secondary btn-sm" 
+                            title="Message Applicant"
+                            style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', padding: '0.4rem 0.75rem', cursor: 'pointer' }}
+                          >
+                            <MessageSquare size={14} /> Message
+                          </button>
+                        )}
                         <button onClick={() => openProfile(app)} className="btn-secondary btn-sm" title="View Full Profile">Profile</button>
                       </div>
                     </td>

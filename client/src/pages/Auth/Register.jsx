@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { User, Mail, Lock, Building2, BookOpen, AlertCircle, ArrowRight } from 'lucide-react';
+import { GoogleLogin } from '@react-oauth/google';
+import { User, Mail, Lock, Building2, BookOpen, AlertCircle, ArrowRight, Eye, EyeOff } from 'lucide-react';
 
 export const Register = () => {
   const location = useLocation();
@@ -18,6 +19,7 @@ export const Register = () => {
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const { login } = useAuth();
   const navigate = useNavigate();
@@ -37,14 +39,35 @@ export const Register = () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ...formData, role })
       });
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
       
-      if (!res.ok) throw new Error(data.message);
+      if (!res.ok) throw new Error(data.message || 'Unable to connect to the server. Please ensure the backend is running.');
       
       login(data.token, data.user);
       navigate(`/${data.user.role}-dashboard`);
     } catch (err) {
       setError(err.message || 'Registration failed.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGoogleSuccess = async (credentialResponse) => {
+    setError('');
+    setLoading(true);
+    try {
+      const res = await fetch('/api/auth/google', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ credential: credentialResponse.credential, role })
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.message || 'Google Registration failed. Please ensure the backend is running.');
+      
+      login(data.token, data.user);
+      navigate(`/${data.user.role}-dashboard`);
+    } catch (err) {
+      setError(err.message || 'Google Registration failed.');
     } finally {
       setLoading(false);
     }
@@ -83,6 +106,23 @@ export const Register = () => {
           </div>
         )}
 
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1.5rem' }}>
+          <GoogleLogin 
+            onSuccess={handleGoogleSuccess} 
+            onError={() => setError('Google Signup Failed')}
+            useOneTap
+            theme="filled_black"
+            text="signup_with"
+            shape="rectangular"
+          />
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', margin: '1.5rem 0', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+          <div style={{ flex: 1, height: '1px', background: 'var(--border-color)' }}></div>
+          <span style={{ padding: '0 1rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Or register with email</span>
+          <div style={{ flex: 1, height: '1px', background: 'var(--border-color)' }}></div>
+        </div>
+
         <form onSubmit={handleSubmit}>
           
           {/* Common Fields */}
@@ -106,7 +146,16 @@ export const Register = () => {
             <label className="form-label">Password</label>
             <div style={{ position: 'relative' }}>
               <Lock size={18} color="var(--text-muted)" style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)' }} />
-              <input type="password" name="password" className="form-input" style={{ paddingLeft: '2.75rem' }} placeholder="Create a strong password" value={formData.password} onChange={handleChange} required minLength="6" />
+              <input type={showPassword ? 'text' : 'password'} name="password" className="form-input" style={{ paddingLeft: '2.75rem', paddingRight: '2.75rem' }} placeholder="Create a strong password" value={formData.password} onChange={handleChange} required minLength="6" />
+              <button 
+                type="button" 
+                onClick={() => setShowPassword(!showPassword)} 
+                style={{ position: 'absolute', right: '0.75rem', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', padding: '0.25rem', display: 'flex', alignItems: 'center', color: 'var(--text-muted)' }}
+                tabIndex={-1}
+                aria-label={showPassword ? 'Hide password' : 'Show password'}
+              >
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
             </div>
           </div>
 

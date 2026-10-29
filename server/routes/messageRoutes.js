@@ -39,7 +39,8 @@ router.get('/conversations', authenticate, async (req, res) => {
       });
       
       // Seed demo conversations
-      if (Object.keys(convMap).length === 0 && req.user.role === 'student') {
+      if (Object.keys(convMap).length === 0 && req.user.role === 'student' && !global.demoMessagesSeeded) {
+        global.demoMessagesSeeded = true;
         const demoMsgs = [
           { _id: 'msg_1', senderId: 'mock_hr_1', receiverId: req.user.id, conversationId: getConversationId('mock_hr_1', req.user.id), content: 'Hi! We reviewed your profile and would like to invite you for an interview.', type: 'text', isRead: false, createdAt: new Date(Date.now() - 7200000) },
           { _id: 'msg_2', senderId: req.user.id, receiverId: 'mock_hr_1', conversationId: getConversationId('mock_hr_1', req.user.id), content: 'Thank you! I would love to schedule an interview. When would be convenient?', type: 'text', isRead: true, createdAt: new Date(Date.now() - 3600000) }
@@ -101,6 +102,26 @@ router.post('/send', authenticate, async (req, res) => {
     }
   } catch (err) {
     res.status(500).json({ message: 'Error sending message.' });
+  }
+});
+
+// Delete Conversation
+router.delete('/:conversationId', authenticate, async (req, res) => {
+  try {
+    if (isMongoConnected()) {
+      const Message = require('../models/Message');
+      await Message.deleteMany({ conversationId: req.params.conversationId });
+      return res.json({ message: 'Conversation deleted' });
+    } else {
+      for (let i = mockMessages.length - 1; i >= 0; i--) {
+        if (mockMessages[i].conversationId === req.params.conversationId) {
+          mockMessages.splice(i, 1);
+        }
+      }
+      return res.json({ message: 'Conversation deleted' });
+    }
+  } catch (err) {
+    res.status(500).json({ message: 'Error deleting conversation' });
   }
 });
 

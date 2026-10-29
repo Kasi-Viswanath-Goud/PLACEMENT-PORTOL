@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { MessageSquare, Send, User, Building2 } from 'lucide-react';
+import { MessageSquare, Send, User, Building2, Trash2 } from 'lucide-react';
 
 export const Messages = () => {
   const { user, token } = useAuth();
@@ -77,6 +77,24 @@ export const Messages = () => {
     }
   };
 
+  const handleDeleteConv = async () => {
+    if (!activeConv) return;
+    if (!window.confirm('Are you sure you want to delete this entire conversation?')) return;
+    try {
+      const res = await fetch(`/api/messages/${activeConv._id}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.ok) {
+        setActiveConv(null);
+        setMessages([]);
+        fetchConversations();
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   return (
     <div className="animate-fade-in" style={{ 
       height: '100%', 
@@ -131,8 +149,8 @@ export const Messages = () => {
                   </div>
                   <div style={{ flex: 1, overflow: 'hidden' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '2px' }}>
-                      <div style={{ fontWeight: 600, fontSize: '0.95rem', whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden' }}>
-                        {conv.otherUser?.name || 'Recruiter'}
+                      <div style={{ fontWeight: 600, fontSize: '0.95rem', whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden', color: 'var(--text-primary)' }}>
+                        {(!conv.otherUser?.name || conv.otherUser?.name === 'Unknown') ? (conv.otherUser?.email || 'Unknown User') : conv.otherUser?.name}
                       </div>
                       <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', flexShrink: 0, marginLeft: '0.5rem' }}>
                         {conv.lastMessage?.createdAt ? new Date(conv.lastMessage.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
@@ -156,7 +174,7 @@ export const Messages = () => {
         </div>
 
         {/* Chat Area */}
-        <div style={{ display: 'flex', flexDirection: 'column', background: '#0b141a', position: 'relative', height: '100%', minWidth: 0 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', background: 'var(--bg-primary)', position: 'relative', height: '100%', minWidth: 0 }}>
           
           {/* WhatsApp Doodle Background Pattern */}
           <div style={{ 
@@ -173,14 +191,23 @@ export const Messages = () => {
           {activeConv ? (
             <>
               {/* Chat Header */}
-              <div style={{ padding: '10px 16px', height: '65px', borderBottom: '1px solid #222d34', display: 'flex', alignItems: 'center', gap: '15px', background: '#202c33', zIndex: 1, boxSizing: 'border-box', flexShrink: 0 }}>
-                <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: '#dfe5e7', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#54656f', fontWeight: 600, fontSize: '1.2rem', flexShrink: 0 }}>
-                  {activeConv.otherUser?.name?.charAt(0) || 'U'}
+              <div style={{ padding: '10px 16px', height: '65px', borderBottom: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', gap: '15px', background: 'var(--bg-secondary)', zIndex: 1, boxSizing: 'border-box', flexShrink: 0 }}>
+                <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'var(--border-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-primary)', fontWeight: 600, fontSize: '1.2rem', flexShrink: 0 }}>
+                  {((!activeConv.otherUser?.name || activeConv.otherUser?.name === 'Unknown') ? activeConv.otherUser?.email : activeConv.otherUser?.name)?.charAt(0)?.toUpperCase() || 'U'}
                 </div>
-                <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', overflow: 'hidden' }}>
-                  <div style={{ fontWeight: 400, fontSize: '1rem', color: '#e9edef', whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden' }}>{activeConv.otherUser?.name || 'Recruiter'}</div>
-                  <div style={{ fontSize: '0.8125rem', color: '#8696a0', marginTop: '2px', whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden' }}>{activeConv.otherUser?.role === 'company' ? activeConv.otherUser?.companyName : 'Student'}</div>
+                <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', overflow: 'hidden', flex: 1 }}>
+                  <div style={{ fontWeight: 600, fontSize: '1rem', color: 'var(--text-primary)', whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden' }}>{(!activeConv.otherUser?.name || activeConv.otherUser?.name === 'Unknown') ? (activeConv.otherUser?.email || 'Unknown User') : activeConv.otherUser?.name}</div>
+                  <div style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', marginTop: '2px', whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden' }}>{activeConv.otherUser?.role === 'company' ? activeConv.otherUser?.companyName : 'Student'}</div>
                 </div>
+                <button 
+                  onClick={handleDeleteConv}
+                  title="Delete Conversation"
+                  style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '8px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                  onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255,0,0,0.1)'; e.currentTarget.style.color = 'var(--danger)'; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--text-muted)'; }}
+                >
+                  <Trash2 size={20} />
+                </button>
               </div>
 
               {/* Messages History */}
@@ -197,22 +224,22 @@ export const Messages = () => {
                         minWidth: '100px',
                         padding: '6px 7px 8px 9px', 
                         borderRadius: '7.5px',
-                        background: isMine ? '#005c4b' : '#202c33',
-                        color: '#e9edef',
+                        background: isMine ? 'var(--accent-primary)' : 'var(--bg-secondary)',
+                        color: isMine ? '#fff' : 'var(--text-primary)',
                         borderTopRightRadius: isMine && showTail ? '0px' : '7.5px',
                         borderTopLeftRadius: !isMine && showTail ? '0px' : '7.5px',
-                        boxShadow: '0 1px 0.5px rgba(11,20,26,.13)',
+                        boxShadow: '0 1px 0.5px rgba(0,0,0,.13)',
                         position: 'relative'
                       }}>
                         {/* The little tail SVG */}
                         {showTail && isMine && (
-                          <svg viewBox="0 0 8 13" width="8" height="13" style={{ position: 'absolute', top: 0, right: '-8px', color: '#005c4b' }}>
+                          <svg viewBox="0 0 8 13" width="8" height="13" style={{ position: 'absolute', top: 0, right: '-8px', color: 'var(--accent-primary)' }}>
                             <path opacity=".13" fill="#0000000" d="M1.533 3.118L8 12.118V1H2.8z"></path>
                             <path fill="currentColor" d="M1.533 2.118L8 11.118V0H2.8z"></path>
                           </svg>
                         )}
                         {showTail && !isMine && (
-                          <svg viewBox="0 0 8 13" width="8" height="13" style={{ position: 'absolute', top: 0, left: '-8px', color: '#202c33' }}>
+                          <svg viewBox="0 0 8 13" width="8" height="13" style={{ position: 'absolute', top: 0, left: '-8px', color: 'var(--bg-secondary)' }}>
                             <path opacity=".13" fill="#0000000" d="M1.533 3.118L8 12.118V1H2.8z" transform="scale(-1, 1) translate(-8, 0)"></path>
                             <path fill="currentColor" d="M1.533 2.118L8 11.118V0H2.8z" transform="scale(-1, 1) translate(-8, 0)"></path>
                           </svg>
@@ -224,7 +251,7 @@ export const Messages = () => {
                           </span>
                           <div style={{ 
                             fontSize: '0.6875rem', 
-                            color: 'rgba(255,255,255,0.6)', 
+                            color: isMine ? 'rgba(255,255,255,0.7)' : 'var(--text-muted)', 
                             display: 'flex', 
                             alignItems: 'center', 
                             gap: '3px',
@@ -236,7 +263,7 @@ export const Messages = () => {
                           }}>
                             {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                             {isMine && (
-                              <svg viewBox="0 0 16 15" width="16" height="15" style={{ color: '#53bdeb' }}>
+                              <svg viewBox="0 0 16 15" width="16" height="15" style={{ color: 'rgba(255,255,255,0.9)' }}>
                                 <path fill="currentColor" d="M15.01 3.316l-.478-.372a.365.365 0 0 0-.51.063L8.666 9.879a.32.32 0 0 1-.484.033l-.358-.325a.319.319 0 0 0-.484.032l-.378.483a.418.418 0 0 0 .036.541l1.32 1.266c.143.14.361.125.484-.033l6.272-8.048a.366.366 0 0 0-.064-.512zm-4.1 0l-.478-.372a.365.365 0 0 0-.51.063L4.566 9.879a.32.32 0 0 1-.484.033L1.891 7.769a.366.366 0 0 0-.515.006l-.423.433a.364.364 0 0 0 .006.514l3.258 3.185c.143.14.361.125.484-.033l6.272-8.048a.365.365 0 0 0-.063-.51z"/>
                               </svg>
                             )}
@@ -250,9 +277,9 @@ export const Messages = () => {
               </div>
 
               {/* Chat Input */}
-              <div style={{ minHeight: '62px', padding: '10px 16px', background: '#202c33', zIndex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <div style={{ minHeight: '62px', padding: '10px 16px', background: 'var(--bg-secondary)', borderTop: '1px solid var(--border-color)', zIndex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                 <form onSubmit={sendMessage} style={{ display: 'flex', gap: '12px', alignItems: 'center', width: '100%', maxWidth: '900px' }}>
-                  <div style={{ flex: 1, background: '#2a3942', borderRadius: '8px', padding: '9px 12px', display: 'flex', alignItems: 'center' }}>
+                  <div style={{ flex: 1, background: 'var(--bg-primary)', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '9px 12px', display: 'flex', alignItems: 'center' }}>
                     <input 
                       type="text" 
                       placeholder="Type a message" 
@@ -260,7 +287,7 @@ export const Messages = () => {
                         width: '100%', 
                         background: 'transparent', 
                         border: 'none', 
-                        color: '#d1d7db', 
+                        color: 'var(--text-primary)', 
                         outline: 'none', 
                         fontSize: '0.9375rem',
                         fontFamily: 'inherit'
@@ -274,7 +301,7 @@ export const Messages = () => {
                     style={{ 
                       background: 'transparent', 
                       border: 'none', 
-                      color: newMessage.trim() ? '#00a884' : '#8696a0', 
+                      color: newMessage.trim() ? 'var(--accent-primary)' : 'var(--text-muted)', 
                       cursor: newMessage.trim() ? 'pointer' : 'default',
                       display: 'flex', 
                       alignItems: 'center', 
@@ -291,13 +318,13 @@ export const Messages = () => {
               </div>
             </>
           ) : (
-            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: '#8696a0', zIndex: 1 }}>
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)', zIndex: 1 }}>
               <div style={{ marginBottom: '1.5rem' }}>
                 <svg viewBox="0 0 100 100" width="100" height="100" opacity="0.3">
                   <path fill="currentColor" d="M50 0C22.4 0 0 22.4 0 50c0 11.2 3.7 21.6 10 29.8L5 95l16.1-4.7C29.6 97 39.5 100 50 100c27.6 0 50-22.4 50-50S77.6 0 50 0zm0 91.7c-9.5 0-18.4-2.8-25.7-7.7l-1.8-1.1-10 2.9 3-9.5-1.2-1.9C9 66.8 6.2 58.7 6.2 50c0-23 18.7-41.7 41.7-41.7S89.6 27 89.6 50 70.9 91.7 50 91.7z"/>
                 </svg>
               </div>
-              <h1 style={{ marginBottom: '1rem', color: '#e9edef', fontSize: '2rem', fontWeight: 300 }}>WhatsApp Web (Clone)</h1>
+              <h1 style={{ marginBottom: '1rem', color: 'var(--text-primary)', fontSize: '2rem', fontWeight: 300 }}>Messages</h1>
               <p style={{ fontSize: '0.875rem' }}>Select a conversation from the sidebar to start messaging.</p>
             </div>
           )}

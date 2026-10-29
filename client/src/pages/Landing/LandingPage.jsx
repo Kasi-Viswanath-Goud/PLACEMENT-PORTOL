@@ -6,6 +6,147 @@ import TubesBackground from '../../components/TubesBackground';
 export const LandingPage = () => {
   return (
     <div className="animate-fade-in">
+      <style>{`
+        /* Navbar entrance */
+        .navbar {
+          animation: navbarEnter 0.7s ease-out forwards;
+        }
+
+        .navbar-logo {
+          animation: logoEnter 0.6s ease-out 0.15s both;
+        }
+
+        .navbar-theme {
+          animation: fadeScale 0.5s ease-out 0.35s both;
+        }
+
+        .navbar-login {
+          animation: buttonEnter 0.5s ease-out 0.45s both;
+        }
+
+        .navbar-signup {
+          animation: buttonEnter 0.5s ease-out 0.55s both;
+        }
+
+        @keyframes navbarEnter {
+          from {
+            opacity: 0;
+            transform: translateY(-20px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
+        @keyframes logoEnter {
+          from {
+            opacity: 0;
+            transform: translateX(-20px);
+          }
+          to {
+            opacity: 1;
+            transform: translateX(0);
+          }
+        }
+
+        @keyframes buttonEnter {
+          from {
+            opacity: 0;
+            transform: translateX(20px);
+          }
+          to {
+            opacity: 1;
+            transform: translateX(0);
+          }
+        }
+
+        @keyframes fadeScale {
+          from {
+            opacity: 0;
+            transform: scale(0.8);
+          }
+          to {
+            opacity: 1;
+            transform: scale(1);
+          }
+        }
+
+        /* Hero sequence animations */
+        .hero-anim-1,
+        .hero-anim-2,
+        .hero-anim-3,
+        .hero-anim-4,
+        .hero-anim-5 {
+          opacity: 0;
+          will-change: transform, opacity;
+        }
+
+        .hero-anim-1 {
+          animation: heroSlideUp 700ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+        }
+
+        .hero-anim-2 {
+          animation: heroSlideUpGlow 800ms cubic-bezier(0.22, 1, 0.36, 1) 250ms forwards;
+        }
+
+        .hero-anim-3 {
+          animation: heroSlideUp 650ms cubic-bezier(0.22, 1, 0.36, 1) 450ms forwards;
+        }
+
+        .hero-anim-4 {
+          animation: heroSlideUp 600ms cubic-bezier(0.22, 1, 0.36, 1) 700ms forwards;
+        }
+
+        .hero-anim-5 {
+          animation: heroSlideUp 600ms cubic-bezier(0.22, 1, 0.36, 1) 900ms forwards;
+        }
+
+        @keyframes heroSlideUp {
+          0% {
+            opacity: 0;
+            transform: translateY(20px);
+          }
+          100% {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
+        @keyframes heroSlideUpGlow {
+          0% {
+            opacity: 0;
+            transform: translateY(20px);
+            filter: drop-shadow(0 0 0px rgba(96, 165, 250, 0));
+          }
+          50% {
+            filter: drop-shadow(0 0 15px rgba(96, 165, 250, 0.6));
+          }
+          100% {
+            opacity: 1;
+            transform: translateY(0);
+            filter: drop-shadow(0 0 0px rgba(96, 165, 250, 0));
+          }
+        }
+
+        /* Accessibility */
+        @media (prefers-reduced-motion: reduce) {
+          .navbar,
+          .navbar-logo,
+          .navbar-theme,
+          .navbar-login,
+          .navbar-signup,
+          .hero-anim-1,
+          .hero-anim-2,
+          .hero-anim-3,
+          .hero-anim-4,
+          .hero-anim-5 {
+            animation: none !important;
+            opacity: 1 !important;
+            transform: none !important;
+          }
+        }
+      `}</style>
       
       {/* Hero Section — 3D Tubes Interactive Background */}
       <TubesBackground style={{ minHeight: 'calc(100vh - 72px)' }}>
@@ -19,98 +160,61 @@ export const LandingPage = () => {
           minHeight: 'calc(100vh - 72px)'
         }}>
           <div style={{ maxWidth: '900px', width: '100%' }}>
-            <div style={{ 
-              display: 'inline-flex', alignItems: 'center', gap: '0.5rem', 
-              background: 'rgba(16, 185, 129, 0.15)', color: '#10b981', 
-              padding: '0.4rem 1rem', borderRadius: '9999px', fontSize: '0.85rem', 
-              fontWeight: 600, marginBottom: '1.5rem', 
-              border: '1px solid rgba(16, 185, 129, 0.3)',
-              backdropFilter: 'blur(8px)'
-            }}>
-              <Zap size={14} /> AI-Powered Matching Engine Now Live
-            </div>
-            
             <h1 style={{ 
               fontSize: 'clamp(2.5rem, 6vw, 4rem)', 
               fontWeight: 900, 
               lineHeight: 1.1, 
-              marginBottom: '1.5rem', 
-              color: '#fff',
-              textShadow: '0 4px 30px rgba(0,0,0,0.5)'
+              marginBottom: '0.5rem', 
+              color: 'var(--text-primary)'
             }}>
-              Accelerate Your Career with{' '}
-              <span style={{ 
-                color: '#ef4444' 
+              <span className="hero-anim-1" style={{ display: 'inline-block' }}>
+                Accelerate Your Career with{' '}
+              </span>
+              <span className="text-gradient hero-anim-2" style={{ 
+                display: 'block'
               }}>ALTS</span>
+              <span className="hero-anim-3" style={{
+                fontSize: 'clamp(1.5rem, 4vw, 2.5rem)',
+                fontWeight: 600,
+                color: 'var(--accent-secondary)',
+                display: 'block',
+                marginTop: '0.5rem'
+              }}>Placement Portal</span>
             </h1>
             
-            <p style={{ 
+            <p className="hero-anim-4" style={{ 
               fontSize: '1.2rem', 
-              color: 'rgba(255,255,255,0.8)', 
+              color: 'var(--text-secondary)', 
               marginBottom: '2.5rem', 
               maxWidth: '700px', 
-              margin: '0 auto 2.5rem',
-              textShadow: '0 2px 10px rgba(0,0,0,0.4)'
+              margin: '0 auto 2.5rem'
             }}>
               The premier campus placement portal connecting top tier talent with global enterprises through intelligent resume analysis and automated recruitment workflows.
             </p>
             
-            <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
+            <div className="hero-anim-5" style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
               <Link to="/register" className="btn-primary" style={{ 
                 padding: '1rem 2rem', fontSize: '1.1rem',
                 pointerEvents: 'auto'
               }}>
                 Create Student Profile <ArrowRight size={18} />
               </Link>
-              <Link to="/register?role=company" style={{ 
+              <Link to="/login" className="btn-secondary" style={{ 
                 padding: '1rem 2rem', fontSize: '1.1rem',
-                background: 'rgba(255,255,255,0.1)',
-                backdropFilter: 'blur(12px)',
-                border: '1px solid rgba(255,255,255,0.2)',
                 borderRadius: '12px',
-                color: '#fff',
-                textDecoration: 'none',
                 fontWeight: 600,
-                transition: 'all 0.3s ease',
                 pointerEvents: 'auto'
               }}>
-                Post a Job (Recruiters)
+                Login or Signup
               </Link>
             </div>
 
-            {/* Hint */}
-            <div style={{ 
-              marginTop: '3rem', 
-              display: 'flex', 
-              flexDirection: 'column', 
-              alignItems: 'center', 
-              gap: '0.5rem', 
-              color: 'rgba(255,255,255,0.4)', 
-              animation: 'pulse 2s ease-in-out infinite' 
-            }}>
-              <MousePointer2 size={20} />
-              <span style={{ fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.15em' }}>Move cursor to interact · Click to change colors</span>
-            </div>
+
           </div>
         </section>
       </TubesBackground>
 
-      {/* Global Search Bar Snippet */}
-      <section style={{ padding: '4rem 2rem', marginTop: '-2rem', position: 'relative', zIndex: 5 }}>
-        <div className="container" style={{ maxWidth: '800px' }}>
-          <div className="glass-panel" style={{ padding: '1rem', display: 'flex', gap: '1rem', borderRadius: '9999px', alignItems: 'center' }}>
-            <Search size={24} color="var(--text-muted)" style={{ marginLeft: '1rem' }} />
-            <input 
-              type="text" 
-              placeholder="Search for jobs, companies, or skills..." 
-              style={{ flex: 1, background: 'transparent', border: 'none', color: 'var(--text-primary)', fontSize: '1.1rem', outline: 'none' }}
-            />
-            <Link to="/jobs" className="btn-primary" style={{ borderRadius: '9999px', padding: '0.75rem 2rem' }}>
-              Search Jobs
-            </Link>
-          </div>
-        </div>
-      </section>
+
 
       {/* Stats Counter Section */}
       <section style={{ padding: '4rem 2rem', borderTop: '1px solid var(--border-color)', borderBottom: '1px solid var(--border-color)', background: 'var(--bg-secondary)' }}>
@@ -143,7 +247,7 @@ export const LandingPage = () => {
           </div>
           
           <div className="grid-3">
-            <div className="glass-card stagger-1">
+            <div className="glass-card animate-slide-up stagger-1">
               <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: 'rgba(99,102,241,0.15)', color: 'var(--accent-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1.5rem' }}>
                 <Zap size={24} />
               </div>
@@ -151,7 +255,7 @@ export const LandingPage = () => {
               <p style={{ color: 'var(--text-secondary)' }}>Get instant feedback on your resume. Our AI ATS checker highlights skill gaps and suggests improvements to boost your chances.</p>
             </div>
 
-            <div className="glass-card stagger-2">
+            <div className="glass-card animate-slide-up stagger-2">
               <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: 'rgba(16,185,129,0.15)', color: 'var(--success)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1.5rem' }}>
                 <Briefcase size={24} />
               </div>
@@ -159,7 +263,7 @@ export const LandingPage = () => {
               <p style={{ color: 'var(--text-secondary)' }}>Stop manual searching. Our algorithm matches your skills, CGPA, and branch with exactly the right opportunities automatically.</p>
             </div>
 
-            <div className="glass-card stagger-3">
+            <div className="glass-card animate-slide-up stagger-3">
               <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: 'rgba(245,158,11,0.15)', color: 'var(--warning)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1.5rem' }}>
                 <ShieldCheck size={24} />
               </div>

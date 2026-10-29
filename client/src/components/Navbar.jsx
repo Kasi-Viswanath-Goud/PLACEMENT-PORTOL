@@ -14,7 +14,7 @@ export const Navbar = () => {
   const isAuthPage = location.pathname === '/login' || location.pathname === '/register';
 
   return (
-    <header style={{
+    <header className="navbar" style={{
       background: 'var(--bg-card)',
       backdropFilter: 'blur(12px)',
       WebkitBackdropFilter: 'blur(12px)',
@@ -27,7 +27,7 @@ export const Navbar = () => {
       <div className="container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem 2rem' }}>
         
         {/* Brand */}
-        <Link to={user ? `/${user.role}-dashboard` : '/'} style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', textDecoration: 'none' }}>
+        <Link to={user ? `/${user.role}-dashboard` : '/'} className="navbar-logo" style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', textDecoration: 'none' }}>
           <img src="/logo.png" alt="ALTS Logo" style={{ 
             height: '40px', 
             objectFit: 'contain', 
@@ -65,7 +65,7 @@ export const Navbar = () => {
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
             
             {/* Theme Toggle */}
-            <button className="btn-secondary btn-sm" onClick={toggleTheme} style={{ padding: '0.5rem', borderRadius: '50%' }} aria-label="Toggle Theme">
+            <button className="btn-secondary btn-sm navbar-theme" onClick={toggleTheme} style={{ padding: '0.5rem', borderRadius: '50%' }} aria-label="Toggle Theme">
               {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
             </button>
 
@@ -95,8 +95,8 @@ export const Navbar = () => {
               </>
             ) : !isAuthPage ? (
               <div style={{ display: 'flex', gap: '0.5rem' }}>
-                <Link to="/login" className="btn-secondary btn-sm">Log In</Link>
-                <Link to="/register" className="btn-primary btn-sm">Sign Up</Link>
+                <Link to="/login" className="btn-secondary btn-sm navbar-login">Log In</Link>
+                <Link to="/register" className="btn-primary btn-sm navbar-signup">Sign Up</Link>
               </div>
             ) : null}
 

@@ -49,6 +49,14 @@ export default function DashboardLayout() {
     sessionStorage.setItem('hasSeenJobPopup', 'true');
   };
 
+  // Auto-dismiss notification after 4 seconds
+  useEffect(() => {
+    if (showDropdown) {
+      const timer = setTimeout(() => handleDismissPopup(), 4000);
+      return () => clearTimeout(timer);
+    }
+  }, [showDropdown]);
+
   const getBreadcrumbs = () => {
     const path = location.pathname;
     if (path === '/student-dashboard') return ['Home', 'Student Dashboard'];
@@ -89,7 +97,11 @@ export default function DashboardLayout() {
     { to: '/notifications', label: 'Notifications', icon: <Bell size={18} />, badge: true },
   ];
 
-  const links = user?.role === 'company' ? companyLinks : studentLinks;
+  const adminLinks = [
+    { to: '/admin-dashboard', label: 'System Admin', icon: <LayoutGrid size={18} /> },
+  ];
+
+  const links = user?.role === 'admin' ? adminLinks : (user?.role === 'company' ? companyLinks : studentLinks);
 
   return (
     <div style={{
@@ -194,19 +206,17 @@ export default function DashboardLayout() {
         {/* Bottom User Account Card */}
         {user && (
           <div style={{
-            background: 'var(--bg-card)',
-            border: '1px solid var(--border-color)',
-            padding: '0.85rem',
-            borderRadius: 'var(--radius-lg)',
             marginTop: 'auto',
+            padding: '1rem 0.5rem',
             display: 'flex',
             alignItems: 'center',
-            gap: '0.75rem'
+            gap: '0.75rem',
+            borderTop: '1px solid var(--border-color)'
           }}>
             {/* Avatar */}
             <div style={{
-              width: '40px',
-              height: '40px',
+              width: '42px',
+              height: '42px',
               borderRadius: '50%',
               background: 'var(--accent-primary)',
               display: 'flex',
@@ -214,16 +224,17 @@ export default function DashboardLayout() {
               justifyContent: 'center',
               color: '#fff',
               fontWeight: 600,
+              fontSize: '1.1rem',
               flexShrink: 0
             }}>
-              {user.name ? user.name.charAt(0).toUpperCase() : <User size={18} />}
+              {user.name ? user.name.charAt(0).toUpperCase() : <User size={20} />}
             </div>
 
             {/* Info details */}
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{
                 fontWeight: 700,
-                fontSize: '0.85rem',
+                fontSize: '0.95rem',
                 color: 'var(--text-primary)',
                 whiteSpace: 'nowrap',
                 overflow: 'hidden',
@@ -232,7 +243,7 @@ export default function DashboardLayout() {
                 {user.name}
               </div>
               <div style={{
-                fontSize: '0.7rem',
+                fontSize: '0.75rem',
                 color: 'var(--text-secondary)',
                 textTransform: 'capitalize'
               }}>
@@ -261,7 +272,7 @@ export default function DashboardLayout() {
               onMouseLeave={(e) => e.currentTarget.style.color = 'var(--text-muted)'}
               title="Logout"
             >
-              <LogOut size={16} />
+              <LogOut size={18} />
             </button>
           </div>
         )}
@@ -437,7 +448,7 @@ export default function DashboardLayout() {
                 width: '38px', height: '38px',
                 background: theme === 'dark' ? 'rgba(255,255,255,0.03)' : '#fff', border: theme === 'dark' ? '1px solid rgba(255,255,255,0.05)' : '1px solid rgba(0,0,0,0.1)',
                 borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                cursor: 'pointer', border: 'none', color: theme === 'dark' ? '#fff' : '#0f172a'
+                cursor: 'pointer', color: theme === 'dark' ? '#fff' : '#0f172a'
               }}
               title="Toggle Theme"
             >
