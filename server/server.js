@@ -2,13 +2,15 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 const dotenv = require('dotenv');
-const { connectDB } = require('./config/db');
+const { connectDB, isMongoConnected, isProduction } = require('./config/db');
 
 dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+// Kick off a warm-instance connection; API middleware below also awaits it so
+// serverless cold starts never serve a request before MongoDB is ready.
 connectDB();
 
 // Middleware
@@ -74,6 +76,35 @@ const resolveRouter = (routeModule, routeName) => {
   throw new TypeError(`${routeName} did not export an Express Router`);
 };
 
+// Health Check (kept outside the database gate so deployments can diagnose it)
+app.get('/api/health', async (req, res) => {
+  const connected = await connectDB();
+  const database = isMongoConnected() ? 'connected' : (isProduction() ? 'unavailable' : 'mock');
+  res.status(connected || !isProduction() ? 200 : 503).json({
+    status: connected ? 'ONLINE' : (isProduction() ? 'DEGRADED' : 'ONLINE'),
+    database,
+    timestamp: new Date().toISOString(),
+    service: 'ALTS API'
+  });
+});
+
+// Never return transient in-memory data from production API routes. Doing so
+// made authentication and writes appear successful while losing all changes.
+app.use('/api', async (req, res, next) => {
+  try {
+    const connected = await connectDB();
+    if (!connected && isProduction()) {
+      return res.status(503).json({
+        message: 'Database unavailable. Check the production MONGO_URI and Atlas network access settings.'
+      });
+    }
+    next();
+  } catch (err) {
+    console.error('Database readiness check failed:', err.name || 'UnknownError');
+    res.status(503).json({ message: 'Database unavailable.' });
+  }
+});
+
 // Routes
 const authRoutes = resolveRouter(require('./routes/authRoutes'), 'authRoutes');
 const studentRoutes = resolveRouter(require('./routes/studentRoutes'), 'studentRoutes');
@@ -92,11 +123,6 @@ app.use('/api/notifications', notificationRoutes);
 app.use('/api/messages', messageRoutes);
 app.use('/api/saved-jobs', savedJobRoutes);
 app.use('/api/admin', adminRoutes);
-
-// Health Check
-app.get('/api/health', (req, res) => {
-  res.json({ status: 'ONLINE', timestamp: new Date().toISOString(), service: 'ALTS API' });
-});
 
 // Error Handler
 app.use((err, req, res, next) => {

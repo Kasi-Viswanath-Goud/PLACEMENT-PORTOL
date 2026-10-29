@@ -1,25 +1,54 @@
 const mongoose = require('mongoose');
 
-// Catch any unhandled mongoose connection error events to prevent Lambda crash
+let connectionAttempt;
+
 mongoose.connection.on('error', (err) => {
-  console.warn('Mongoose connection event error caught:', err.message);
+  // Do not log a connection URI or credentials as part of driver errors.
+  console.warn('MongoDB connection error:', err.name || 'UnknownError');
 });
 
 const isMongoConnected = () => mongoose.connection.readyState === 1;
+const isProduction = () => process.env.NODE_ENV === 'production' || Boolean(process.env.VERCEL);
 
-const connectDB = async () => {
-  if (mongoose.connection.readyState >= 1) return;
-  const mongoURI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/placement_portal';
-  try {
-    mongoose.set('strictQuery', false);
-    await mongoose.connect(mongoURI, {
-      serverSelectionTimeoutMS: 3000
-    });
-    console.log(`✅ MongoDB Connected to: ${mongoose.connection.host}`);
-  } catch (err) {
-    console.warn(`⚠️ MongoDB not reachable (${err.message}).`);
-    console.log(`ℹ️ Running in Mock Mode. Set MONGO_URI in .env for MongoDB.`);
-  }
+const getMongoURI = () => {
+  let uri = process.env.MONGO_URI || '';
+  // Accept common Vercel copy/paste mistakes while never logging the secret.
+  uri = uri.trim().replace(/^MONGO_URI\s*=\s*/i, '').replace(/^(['"])(.*)\1$/, '$2').trim();
+  return uri;
 };
 
-module.exports = { connectDB, isMongoConnected };
+const connectDB = async () => {
+  if (isMongoConnected()) return true;
+  if (connectionAttempt) return connectionAttempt;
+
+  const mongoURI = getMongoURI();
+  if (!mongoURI) {
+    if (isProduction()) console.error('MONGO_URI is missing; production database requests are unavailable.');
+    return false;
+  }
+  if (!/^mongodb(?:\+srv)?:\/\//i.test(mongoURI)) {
+    console.error('MONGO_URI must begin with mongodb:// or mongodb+srv://.');
+    return false;
+  }
+
+  mongoose.set('strictQuery', false);
+  connectionAttempt = mongoose.connect(mongoURI, {
+    serverSelectionTimeoutMS: 5000,
+    connectTimeoutMS: 10000,
+    maxPoolSize: 10,
+    minPoolSize: 0,
+    maxIdleTimeMS: 30000
+  }).then(() => {
+    console.log(`MongoDB connected to host: ${mongoose.connection.host}`);
+    return true;
+  }).catch((err) => {
+    console.error(`MongoDB connection failed (${err.name || 'UnknownError'}).`);
+    return false;
+  }).finally(() => {
+    connectionAttempt = null;
+  });
+
+  return connectionAttempt;
+};
+
+module.exports = { connectDB, isMongoConnected, isProduction };

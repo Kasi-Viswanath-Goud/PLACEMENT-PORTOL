@@ -19,15 +19,16 @@ router.post('/register', async (req, res) => {
     if (!name || !email || !password) {
       return res.status(400).json({ message: 'Name, email, and password are required.' });
     }
+    const normalizedEmail = String(email).trim().toLowerCase();
     const assignedRole = ['student', 'company', 'admin'].includes(role) ? role : 'student';
     const hashedPassword = await bcrypt.hash(password, 10);
 
     if (isMongoConnected()) {
-      const existing = await User.findOne({ email });
+      const existing = await User.findOne({ email: normalizedEmail });
       if (existing) return res.status(400).json({ message: 'Email already registered.' });
 
       const user = new User({
-        name, email, password: hashedPassword, role: assignedRole,
+        name, email: normalizedEmail, password: hashedPassword, role: assignedRole,
         cgpa: parseFloat(cgpa) || 0, branch: branch || 'Computer Science',
         passingYear: parseInt(passingYear) || 2026, phone: phone || '',
         college: college || '', university: university || '', degree: degree || 'B.Tech',
@@ -41,9 +42,9 @@ router.post('/register', async (req, res) => {
       const { password: _, ...userData } = user.toObject();
       return res.status(201).json({ message: 'Registered successfully!', token, user: userData });
     } else {
-      if (findMockUser(email)) return res.status(400).json({ message: 'Email already registered.' });
+      if (findMockUser(normalizedEmail)) return res.status(400).json({ message: 'Email already registered.' });
       const newUser = {
-        _id: 'usr_' + Date.now(), name, email, password: hashedPassword, role: assignedRole,
+        _id: 'usr_' + Date.now(), name, email: normalizedEmail, password: hashedPassword, role: assignedRole,
         cgpa: parseFloat(cgpa) || 8.2, branch: branch || 'Computer Science',
         passingYear: parseInt(passingYear) || 2026, phone: phone || '+91 9876543210',
         college: college || 'IIIT Hyderabad', university: university || 'IIIT Hyderabad', degree: degree || 'B.Tech',
@@ -98,6 +99,7 @@ router.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body;
     if (!email || !password) return res.status(400).json({ message: 'Email and password required.' });
+    const normalizedEmail = String(email).trim().toLowerCase();
 
     let demoUsersDict = null;
     const getDemoUsers = async () => {
@@ -167,10 +169,10 @@ router.post('/login', async (req, res) => {
     };
 
     if (isMongoConnected()) {
-      let user = await User.findOne({ email });
-      if (!user && ['student@campus.edu', 'hr@google.com', 'admin@placement.edu'].includes(email)) {
+      let user = await User.findOne({ email: normalizedEmail });
+      if (!user && ['student@campus.edu', 'hr@google.com', 'admin@placement.edu'].includes(normalizedEmail)) {
         const demos = await getDemoUsers();
-        const demoData = { ...demos[email] };
+        const demoData = { ...demos[normalizedEmail] };
         delete demoData._id; // Let Mongo generate _id
         user = new User(demoData);
         await user.save();
@@ -188,10 +190,10 @@ router.post('/login', async (req, res) => {
       return res.json({ message: 'Login successful!', token, user: userData });
     } else {
       // Seed demo accounts
-      let user = findMockUser(email);
-      if (!user && ['student@campus.edu', 'hr@google.com', 'admin@placement.edu'].includes(email)) {
+      let user = findMockUser(normalizedEmail);
+      if (!user && ['student@campus.edu', 'hr@google.com', 'admin@placement.edu'].includes(normalizedEmail)) {
         const demos = await getDemoUsers();
-        user = demos[email];
+        user = demos[normalizedEmail];
         if (user) mockUsers.push(user);
       }
       if (!user) return res.status(400).json({ message: 'Invalid credentials.' });
@@ -233,7 +235,9 @@ router.post('/google', async (req, res) => {
       if (!payload) return res.status(400).json({ message: 'Invalid Google credential.' });
     }
 
-    const { email, name, picture, sub: googleId } = payload;
+    const { email: rawEmail, name, picture, sub: googleId } = payload;
+    if (!rawEmail) return res.status(400).json({ message: 'Google account did not provide an email.' });
+    const email = String(rawEmail).trim().toLowerCase();
     const assignedRole = ['student', 'company', 'admin'].includes(role) ? role : 'student';
 
     if (isMongoConnected()) {
